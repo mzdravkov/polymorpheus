@@ -1,0 +1,1 @@
+http://www.athanasiadis.info/assets/pdf/bdcat2017.pdf - Benefits of using parquet for VCF files

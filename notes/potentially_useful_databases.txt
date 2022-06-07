@@ -1,0 +1,3 @@
+http://www.sequenceontology.org - SO is a collaborative ontology project for the definition of sequence features used in biological sequence annotation. snpEff annotations are using this categorization prefereably in some fields - datasets: https://github.com/The-Sequence-Ontology/SO-Ontologies
+
+
