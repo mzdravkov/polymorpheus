@@ -4,6 +4,7 @@ import re
 import csv
 import vcf
 import pandas as pd
+import numpy as np
 
 from subprocess import PIPE
 from subprocess import Popen
@@ -11,6 +12,8 @@ from subprocess import Popen
 from enum import Enum
 
 from config import CONFIG
+
+import utils
 
 
 class VCF_COLUMNS(Enum):
@@ -153,8 +156,7 @@ def create_annotated_vcf_files_for_genes(file, ref_genome, gene_names_file):
         if gene in files:
             files[gene].write(line)
         else:
-            dir_name = os.path.basename(file)
-            dest_dir = 'data/intermediary/{}'.format(dir_name)
+            dest_dir = utils.get_data_dir(file)
             if not os.path.exists(dest_dir):
                 os.makedirs(dest_dir)
             files[gene] = open(os.path.join(dest_dir, gene + '.vcf'), 'w')
@@ -178,10 +180,12 @@ def __remove_key(hashmap, key):
 def parse_vcf(file):
     """
     Parses the given VCF file and returns two dataframes:
-    - The first one includes all colums from the VCF (with the INFO column
-    normalized to separate columns), but without the INFO.ANN field
-    - The second one contains the INFO.ANN annotations, where each annotation
-    is a separate column.
+    - The first one - variants dataframe - includes all colums from the VCF
+    (with the INFO column as map), but without the INFO.ANN field.
+    - The second one - annotations dataframe - contains the INFO.ANN annotations,
+    where each annotation is a separate column.
+    Note that the annotations dataframe contains indices to the row number in the
+    variants dataframe.
     """
     reader = vcf.Reader(open(file))
     df = pd.DataFrame([vars(r) for r in reader])
@@ -192,6 +196,18 @@ def parse_vcf(file):
     annotation_series = df.INFO.map(lambda info: info['ANN']).rename('ANN')
     denorm_annotations_df = pd.DataFrame(annotation_series).explode('ANN')
     denorm_annotations_df.reset_index(inplace=True)
+
+    variation_annotation_ids = []
+    i = 0
+    prev = None
+    for variation in denorm_annotations_df['index']:
+        i += 1
+        if prev not in (None, variation):
+            i = 1
+        prev = variation
+        variation_annotation_ids.append(i)
+
+    denorm_annotations_df.insert(1, 'gene_variation', variation_annotation_ids)
     annotations = denorm_annotations_df.ANN.str.split('|', expand=True)
     annotations_df = denorm_annotations_df.drop('ANN', axis=1).merge(annotations, left_index=True, right_index=True)
 
@@ -206,14 +222,15 @@ def parse_vcf(file):
     df = df.drop('samples', axis=1)
 
     col_names = [col.name.lower() for col in ANN_COLUMNS]
-    col_names.insert(0, 'sample_index')
+    col_names.insert(0, 'gene_variation')
+    col_names.insert(1, 'variation_annotation')
     annotations_df.columns = col_names
-    # print(df.columns)
-    # print(col_names)
+
+    df.columns = [col + '_pos' if col in ('start', 'end') else col.lower() for col in df.columns]
+
     return df, annotations_df
 
 
 
-
-create_annotated_vcf_files_for_genes("/home/me/ALL.chrX.shapeit2_integrated_snvindels_v2a_27022019.GRCh38.phased.vcf", "GRCh38.105", "/home/me/Downloads/snpEff/test_gene_names.csv")
-# print(parse_vcf('data/intermediary/ALL.chrX.shapeit2_integrated_snvindels_v2a_27022019.GRCh38.phased.vcf/IL9R'))
+# create_annotated_vcf_files_for_genes("/home/me/ALL.chrX.shapeit2_integrated_snvindels_v2a_27022019.GRCh38.phased.vcf", "GRCh38.105", "/home/me/Downloads/snpEff/test_gene_names.csv")
+# print(parse_vcf('data/intermediary/ALL.chrX.shapeit2_integrated_snvindels_v2a_27022019.GRCh38.phased.vcf/IL9R.vcf'))
