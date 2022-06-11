@@ -12,16 +12,18 @@ def variants_summary(file_hash):
     return db.read_query(query, (file_hash,))
 
 
-def effects_by_impact_summary(file_hash):
+def effects_by_impact_summary_for_gene(file_hash, gene_hgnc):
     query = """
-    SELECT chrom, v.gene_hgnc, impact, effect, count(*) AS count
+    SELECT impact, effect, count(*) AS count
     FROM variants v
     JOIN annotations a ON v.file_hash = a.file_hash AND v.gene_hgnc = a.gene_hgnc AND v.gene_variation = a.gene_variation
-    WHERE v.file_hash = ? AND effect NOT IN ('intergenic_region')
-    GROUP BY 1, 2, 3, 4
-    ORDER BY 1 ASC, 2 ASC, 3 ASC, 5 DESC
+    WHERE v.file_hash = ?
+      AND a.gene_hgnc = ?
+      AND effect NOT IN ('intergenic_region')
+    GROUP BY 1, 2
+    ORDER BY 1 ASC, 3 DESC
     """
-    return db.read_query(query, (file_hash,))
+    return db.read_query(query, (file_hash, gene_hgnc))
 
 
 def transcripts_overview(file_hash):

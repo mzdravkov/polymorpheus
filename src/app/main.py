@@ -15,6 +15,7 @@ import db
 import analysis
 from utils import sha256sum
 from tasks import parse
+from external import get_hgnc_info
 
 main = Blueprint('main', __name__)
 
@@ -81,3 +82,25 @@ def file_summary(sha):
         file=file,
         file_summary=file_summary,
         impact_summary=impact_summary)
+
+
+@main.route('/files/<sha>/<gene_hgnc>')
+def get_gene(sha, gene_hgnc):
+    file = db.get_file_by_sha(sha)
+    chromosome = db.get_chromosome_for_gene(gene_hgnc)
+    hgnc_info = get_hgnc_info(gene_hgnc)
+    effects_summary = analysis.effects_by_impact_summary_for_gene(sha, gene_hgnc).to_dict('records')
+    ordering = {
+        'high': 4,
+        'moderate': 3,
+        'low': 2,
+        'modifier': 1,
+    }
+    effects_summary.sort(reverse=True, key=lambda x: ordering[x['impact'].lower()])
+    return render_template(
+        'gene.html',
+        file=file,
+        gene_hgnc=gene_hgnc,
+        hgnc_info=hgnc_info,
+        chromosome=chromosome,
+        effects_summary=effects_summary)

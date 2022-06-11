@@ -209,6 +209,14 @@ def get_files():
 		return files
 
 
+def get_chromosome_for_gene(gene_hgnc):
+	with __lock.read:
+		db = duckdb.connect(database='db.duckdb', read_only=True)
+		chrom =  db.execute('SELECT chrom FROM variants WHERE gene_hgnc = ? LIMIT 1', (gene_hgnc,)).fetchone()[0]
+		db.close()
+		return chrom
+
+
 def read_query(query, params):
 	with __lock.read:
 		db = duckdb.connect(database='db.duckdb', read_only=True)

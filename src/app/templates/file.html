@@ -58,7 +58,7 @@
             {{ row['chrom'] }}
           </td>
           <td>
-            {{ row['gene_hgnc'] }}
+            <a href="/files/{{ file['hash'] }}/{{ row['gene_hgnc'] }}">{{ row['gene_hgnc'] }}</a>
           </td>
           <td>
             {{ row['high_impact']|int }}

@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1 class="title has-text-centered">
+  <b>{{ hgnc_info['name'] }} ({{ gene_hgnc }})
+</h1>
+<h3 class="subtitle has-text-centered">
+  {{ file['name'] }}
+</h3>
+
+<div class="box" style="min-height: 70vh">
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}
+        <div class="notification is-danger">
+            {{ messages[0] }}
+        </div>
+    {% endif %}
+  {% endwith %}
+
+  <a class="button is-link mb-4" href="/files/{{ file['hash'] }}">⇦ Back to file</a>
+
+  <hr/>
+
+  <b>Chromosome:</b> {{ chromosome }}<br/>
+  <b>Ensembl:</b> <a href="http://www.ensembl.org/Homo_sapiens/Gene/Summary?db=core;g={{ hgnc_info['ensembl_gene_id'] }}">{{ hgnc_info['ensembl_gene_id'] }}</a><br/>
+  <b>Entrez:</b> <a href="https://www.ncbi.nlm.nih.gov/gene/{{ hgnc_info['entrez_id'] }}">{{ hgnc_info['entrez_id'] }}</a><br/>
+  <b>HGNC:</b> <a href="https://www.genenames.org/data/gene-symbol-report/#!/hgnc_id/{{ hgnc_info['hgnc_id'] }}">{{ hgnc_info['hgnc_id'] }}</a><br/>
+  <b>UniProt:</b>
+  {% set uniprot_id_count = hgnc_info['uniprot_ids']|length %}
+  {% set i = 0 %}
+  {% for id in hgnc_info['uniprot_ids'] %}
+    {% set i = i+1 %}
+    <a href="https://www.uniprot.org/uniprot/{{ id }}">{{ id }}</a>
+    {% if i < uniprot_id_count %}
+    ,
+    {% endif %}
+
+  {% endfor %}
+
+  <h3 class="title has-text-centered">Effects by impact</h3>
+  <table id='effects-table' class="table is-bordered is-striped is-fullwidth is-hoverable">
+    <thead>
+      <tr>
+        <th class="is-vcentered has-text-centered">
+          Impact
+        </th>
+        <th class="is-vcentered has-text-centered">
+          Effect       
+        </th>
+        <th class="has-text-centered">
+          Count
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in effects_summary %}
+        <tr>
+          <td>
+            {{ row['impact'] }}
+          </td>
+          <td>
+            {{ row['effect'] }}
+          </td>
+          <td>
+            {{ row['count']|int }}
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}
+
+{% block js %}
+<script>
+$(document).ready(function() {
+    $('#effects-table').DataTable({
+      paging: false,
+    });
+});
+</script>
+{% endblock %}

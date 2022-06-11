@@ -5,3 +5,4 @@ duckdb
 Flask
 rwmutex
 Babel
+requests
