@@ -2,3 +2,6 @@ pandas
 pyyaml
 PyVCF3
 duckdb
+Flask
+rwmutex
+Babel

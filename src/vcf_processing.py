@@ -33,6 +33,7 @@ class ANN_COLUMNS(Enum):
     ALT = 0
 
     # Annotated using Sequence Ontology terms. Multiple effects can be concatenated using '&'.
+    # TODO: link effect to sequence ontology browser and show descriptions.
     EFFECT = 1
 
     # A simple estimation of putative impact / deleteriousness : {HIGH, MODERATE, LOW, MODIFIER}
@@ -55,6 +56,7 @@ class ANN_COLUMNS(Enum):
 
     # The bare minimum is at least a description on whether the transcript is {"Coding", "Noncoding"}.
     # Whenever possible, use ENSEMBL biotypes.
+    # https://uswest.ensembl.org/info/genome/genebuild/biotypes.html
     TRANSCRIPT_BIOTYPE = 7
 
     # Exon or Intron rank / total number of exons or introns.

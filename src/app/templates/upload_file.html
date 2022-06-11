@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1 class="title has-text-centered">
+  Upload a VCF file
+</h1>
+
+<div class="box" style="min-height: 70vh">
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}
+        <div class="notification is-danger">
+            {{ messages[0] }}
+        </div>
+    {% endif %}
+  {% endwith %}
+
+  <form method="POST" enctype="multipart/form-data" class="form">
+    <input type=file name=file>
+    <input type=submit value=Upload>
+  </form>
+
+{% endblock %}
+
+{% block js %}
+{% endblock %}

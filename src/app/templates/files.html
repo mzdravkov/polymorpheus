@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1 class="title has-text-centered">
+  Files
+</h1>
+
+<div class="box" style="min-height: 70vh">
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}
+        <div class="notification is-success">
+            {{ messages[0] }}
+        </div>
+    {% endif %}
+  {% endwith %}
+
+  <a class="button is-link mb-4" href="/files/new">Add a file</a>
+
+  <table id='files-table' class="table is-striped is-fullwidth is-hoverable">
+    <thead>
+      <th>
+        Name
+      </th>
+      <th>
+        Created at
+      </th>
+      <th>
+        Status
+      </th>
+      <th>
+        Actions
+      </th>
+    </thead>
+    <tbody>
+      {% for file in files %}
+        <tr>
+          <td>
+            <a class="has-text-link" href="/files/{{ file['hash'] }}">{{ file['name'] }}</a>
+          </td>
+          <td>
+            {{ file['created_at']|format_datetime }}
+          </td>
+          <td>
+            {{ file['status'] }}
+          </td>
+          <td>
+            <a class="has-text-link ml-5" href="/files/{{ file['hash'] }}/delete">Delete</a>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}
+
+{% block js %}
+<script>
+$(document).ready(function() {
+    $('#files-table').DataTable();
+});
+</script>
+{% endblock %}
