@@ -8,9 +8,11 @@ from flask import flash
 from flask import request
 from flask import redirect
 from flask import url_for
+from flask import Markup
 from werkzeug.utils import secure_filename
 
 import db
+import analysis
 from utils import sha256sum
 from tasks import parse
 
@@ -57,6 +59,11 @@ def upload_file():
         path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(path)
         vcf_sha = sha256sum(path)
+        existing_row = db.get_file_by_sha(vcf_sha)
+        if existing_row:
+            flash(Markup('File has already been uploaded and processed. <a href="/files/{}">Link to existing file</a>'.format(vcf_sha)))
+            return redirect(url_for('main.files'))
+
         db.save_file(filename, vcf_sha, path, datetime.now())
         # TODO: support changing the genes files
         th = threading.Thread(target=lambda: parse(path, 'data/genes.csv'))
@@ -64,4 +71,13 @@ def upload_file():
         flash('File uploaded. Will start processing it in the background now. This may take a couple of minutes depending on the size of the file.')
         return redirect(url_for('main.files'))
 
-    
+@main.route('/files/<sha>')    
+def file_summary(sha):
+    file = db.get_file_by_sha(sha)
+    file_summary = analysis.file_summary(sha).to_dict('records')[0]
+    impact_summary = analysis.impact_summary(sha).to_dict('records')
+    return render_template(
+        'file.html',
+        file=file,
+        file_summary=file_summary,
+        impact_summary=impact_summary)

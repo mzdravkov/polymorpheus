@@ -57,7 +57,9 @@
 {% block js %}
 <script>
 $(document).ready(function() {
-    $('#files-table').DataTable();
+    $('#files-table').DataTable({
+      pageLength: 50,
+    });
 });
 </script>
 {% endblock %}

@@ -207,3 +207,11 @@ def get_files():
 		files =  db.execute('SELECT * FROM files').fetch_df().to_dict('records')
 		db.close()
 		return files
+
+
+def read_query(query, params):
+	with __lock.read:
+		db = duckdb.connect(database='db.duckdb', read_only=True)
+		df = db.execute(query, params).fetch_df()
+		db.close()
+		return df

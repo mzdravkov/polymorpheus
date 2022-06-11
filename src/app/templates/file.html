@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1 class="title has-text-centered">
+  {{ file['name'] }}
+</h1>
+
+<div class="box" style="min-height: 70vh">
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}
+        <div class="notification is-danger">
+            {{ messages[0] }}
+        </div>
+    {% endif %}
+  {% endwith %}
+
+  <a class="button is-link mb-4" href="/">⇦ Back to files</a>
+
+  <hr/>
+  <b>Affected genes:</b> {{ file_summary['genes'] }}<br/>
+  <b>Variations:</b> {{ file_summary['variations'] }}<br/>
+  <b>Effects:</b> {{ file_summary['effects'] }}<br/>
+
+
+  <h3 class="title has-text-centered">Effects by impact</h3>
+  <table id='impact-table' class="table is-bordered is-striped is-fullwidth is-hoverable">
+    <thead>
+      <tr>
+        <th rowspan="2" class="is-vcentered has-text-centered">
+          Chromosome
+        </th>
+        <th rowspan="2" class="is-vcentered has-text-centered">
+          Gene       
+        </th>
+        <th colspan="4" class="has-text-centered">
+          Impact
+        </th>
+      </tr>
+      <tr>
+        <th class="has-text-centered">
+          High
+        </th>
+        <th class="has-text-centered">
+          Moderate
+        </th>
+        <th class="has-text-centered">
+          Low
+        </th>
+        <th class="has-text-centered">
+          Modifier
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in impact_summary %}
+        <tr>
+          <td>
+            {{ row['chrom'] }}
+          </td>
+          <td>
+            {{ row['gene_hgnc'] }}
+          </td>
+          <td>
+            {{ row['high_impact']|int }}
+          </td>
+          <td>
+            {{ row['moderate_impact']|int }}
+          </td>
+          <td>
+            {{ row['low_impact']|int }}
+          </td>
+          <td>
+            {{ row['modifiers']|int }}
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}
+
+{% block js %}
+<script>
+$(document).ready(function() {
+    $('#impact-table').DataTable({
+      pageLength: 50,
+    });
+});
+</script>
+{% endblock %}
