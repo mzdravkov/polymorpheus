@@ -21,7 +21,7 @@ main = Blueprint('main', __name__)
 
 
 UPLOAD_FOLDER = 'uploads'
-ALLOWED_EXTENSIONS = {'vcf'}
+ALLOWED_EXTENSIONS = {'vcf', 'vcf.gz'}
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -34,8 +34,10 @@ def files():
 
 
 def allowed_file(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+    for ext in ALLOWED_EXTENSIONS:
+        if filename.endswith('.' + ext):
+            return True
+    return False
 
 
 @main.route('/files/new', methods=['GET'])
@@ -50,12 +52,18 @@ def upload_file():
         flash('No file part.')
         return redirect(request.url)
     file = request.files['file']
+
     # If the user does not select a file, the browser submits an
     # empty file without a filename.
     if file.filename == '':
         flash('No selected file.')
         return redirect(request.url)
-    if file and allowed_file(file.filename):
+
+    if not allowed_file(file.filename):
+        flash('Please upload a VCF file.')
+        return redirect(request.url)
+
+    if file:
         filename = secure_filename(file.filename)
         path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(path)
@@ -96,7 +104,9 @@ def get_gene(sha, gene_hgnc):
         'low': 2,
         'modifier': 1,
     }
-    effects_summary.sort(reverse=True, key=lambda x: ordering[x['impact'].lower()])
+    for row in effects_summary:
+        row['order'] = ordering[row['impact'].lower()]
+    effects_summary.sort(reverse=True, key=lambda row: row['order'])
     return render_template(
         'gene.html',
         file=file,

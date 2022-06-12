@@ -1,4 +1,5 @@
 import duckdb
+import json
 
 import numpy as np
 
@@ -160,6 +161,7 @@ def save_gene_data(file_hash, gene, variants, annotations):
 		variants['alt'] = variants['alt'].apply(lambda alt: ','.join(str(a) for a in alt))
 		variants['filter'] = variants['filter'].apply(lambda filter: ','.join(filter))
 		variants['alleles'] = variants['alleles'].apply(lambda alleles: ','.join(str(a) for a in alleles))
+		variants['info'] = variants['info'].apply(lambda info: json.dumps(info))
 
 		db.register('variants_df', variants)
 		db.register('annotations_df', annotations)
@@ -180,7 +182,8 @@ def save_gene_data(file_hash, gene, variants, annotations):
 def get_file_by_sha(sha):
 	with __lock.read:
 		db = duckdb.connect(database='db.duckdb', read_only=True)
-		file = db.execute('SELECT * FROM files WHERE hash = ?', (sha,)).fetch_df().to_dict('records')[0]
+		files = db.execute('SELECT * FROM files WHERE hash = ?', (sha,)).fetch_df().to_dict('records')
+		file = files[0] if files else None
 		db.close()
 		return file
 
@@ -212,7 +215,8 @@ def get_files():
 def get_chromosome_for_gene(gene_hgnc):
 	with __lock.read:
 		db = duckdb.connect(database='db.duckdb', read_only=True)
-		chrom =  db.execute('SELECT chrom FROM variants WHERE gene_hgnc = ? LIMIT 1', (gene_hgnc,)).fetchone()[0]
+		chroms =  db.execute('SELECT chrom FROM variants WHERE gene_hgnc = ? LIMIT 1', (gene_hgnc,)).fetchone()
+		chrom = chroms[0] if chroms else None
 		db.close()
 		return chrom
 

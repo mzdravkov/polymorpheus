@@ -41,6 +41,9 @@
   <table id='effects-table' class="table is-bordered is-striped is-fullwidth is-hoverable">
     <thead>
       <tr>
+        <th>
+          Impact (numeric)
+        </th>
         <th class="is-vcentered has-text-centered">
           Impact
         </th>
@@ -55,6 +58,9 @@
     <tbody>
       {% for row in effects_summary %}
         <tr>
+          <td>
+            {{ row['order'] }}
+          </td>
           <td>
             {{ row['impact'] }}
           </td>
@@ -77,6 +83,14 @@
 $(document).ready(function() {
     $('#effects-table').DataTable({
       paging: false,
+      order: [[0, 'desc']],
+      columnDefs: [
+        {
+            target: 0,
+            visible: false,
+            searchable: false,
+        },
+      ]
     });
 });
 </script>
