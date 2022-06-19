@@ -9,49 +9,60 @@
 </h3>
 
 <div class="box" style="min-height: 70vh">
-  <a class="button is-link mb-4" href="/files/{{ file['hash'] }}/{{ gene_hgnc }}">⇦ Back to gene</a>
+  <a class="button is-link mb-4" href="/files/{{ file['hash'] }}/gene/{{ gene_hgnc }}">⇦ Back to gene</a>
 
   <hr/>
 
-  {{ variants.to_html(table_id='variants_table' ,index=False, classes=['table', 'is-bordered', 'is-striped', 'is-fullwidth', 'is-hoverable'])|safe }}
 
-  <!-- <h3 class="title has-text-centered">Variants</h3>
-  <table id='effects-table' class="table is-bordered is-striped is-fullwidth is-hoverable">
+  <h3 class="title has-text-centered">Variants</h3>
+  <table id='variants_table' class="table is-bordered is-striped is-fullwidth is-hoverable">
     <thead>
       <tr>
         <th>
-          Impact (numeric)
+          Start
         </th>
         <th class="is-vcentered has-text-centered">
-          Impact
+          End
         </th>
         <th class="is-vcentered has-text-centered">
-          Effect       
+          Reference
         </th>
         <th class="has-text-centered">
-          Count
+          Alternative
+        </th>
+        <th class="has-text-centered">
+          Type
+        </th>
+        <th class="has-text-centered">
+          Subtype
         </th>
       </tr>
     </thead>
     <tbody>
-      {% for row in effects_summary %}
+      {% for row in variants %}
         <tr>
           <td>
-            {{ row['order'] }}
+            {{ row['start_pos'] }}
           </td>
           <td>
-            {{ row['impact'] }}
+            {{ row['end_pos'] }}
           </td>
           <td>
-            {{ row['effect'] }}
+            {{ row['ref'] }}
           </td>
           <td>
-            {{ row['count']|int }}
+            {{ ','.join(row['alt']) }}
+          </td>
+          <td>
+            {{ row['var_type'] }}
+          </td>
+          <td>
+            {{ row['var_subtype'] }}
           </td>
         </tr>
       {% endfor %}
     </tbody>
-  </table> -->
+  </table>
 </div>
 
 {% endblock %}

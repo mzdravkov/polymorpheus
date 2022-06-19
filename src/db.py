@@ -61,6 +61,8 @@ with __lock.write:
 		alleles VARCHAR[],
 		affected_start UBIGINT,
 		affected_end UBIGINT,
+		var_type VARCHAR,
+		var_subtype VARCHAR,
 
 		PRIMARY KEY (file_hash, gene_hgnc, gene_variation),
 		FOREIGN KEY(file_hash, gene_hgnc) REFERENCES genes(file_hash, gene_hgnc),
@@ -116,7 +118,9 @@ SELECT
 	end_pos,
 	str_split(alleles, ',') as alleles,
 	affected_start,
-	affected_end
+	affected_end,
+	var_type,
+	var_subtype
 FROM {}
 """
 
@@ -226,10 +230,15 @@ def get_variants(sha, gene_hgnc, effect=None, impact=None):
 		db = duckdb.connect(database='db.duckdb', read_only=True)
 		variants_df = None
 		if not effect and not impact:
-			variants_df =  db.execute('SELECT pos, ref, alt FROM variants WHERE file_hash = ? AND gene_hgnc = ?', (sha, gene_hgnc)).fetch_df()
+			query = """
+			SELECT start_pos, end_pos, ref, alt, var_type, var_subtype
+			FROM variants
+			WHERE file_hash = ? AND gene_hgnc = ?
+			"""
+			variants_df =  db.execute(query, (sha, gene_hgnc)).fetch_df()
 		else:
 			query = """
-			SELECT pos, ref, v.alt
+			SELECT start_pos, end_pos, ref, v.alt, var_type, var_subtype
 			FROM variants v
 			JOIN annotations a ON v.file_hash = a.file_hash AND v.gene_hgnc = a.gene_hgnc AND v.gene_variation = a.gene_variation
 			WHERE v.file_hash = ?
@@ -247,6 +256,17 @@ def get_variants(sha, gene_hgnc, effect=None, impact=None):
 			variants_df =  db.execute(query, params).fetch_df()
 		db.close()
 		return variants_df
+
+
+def delete_file(sha):
+	with __lock.write:
+		db = duckdb.connect(database='db.duckdb', read_only=False)
+		db.execute('DELETE FROM annotations WHERE file_hash = ?', (sha,))
+		db.execute('DELETE FROM variants WHERE file_hash = ?', (sha,))
+		db.execute('DELETE FROM genes WHERE file_hash = ?', (sha,))
+		db.execute('DELETE FROM tasks WHERE file_hash = ?', (sha,))
+		db.execute('DELETE FROM files WHERE hash = ?', (sha,))
+		db.close()
 
 
 def read_query(query, params):

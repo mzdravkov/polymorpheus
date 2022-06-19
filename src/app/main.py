@@ -90,6 +90,7 @@ def upload_file():
         flash('File uploaded. Will start processing it in the background now. This may take a couple of minutes depending on the size of the file.', category='success')
         return redirect(url_for('main.files'))
 
+
 @main.route('/files/<sha>')    
 def file_summary(sha):
     file = db.get_file_by_sha(sha)
@@ -102,12 +103,24 @@ def file_summary(sha):
         impact_summary=impact_summary)
 
 
-@main.route('/files/<sha>/<gene_hgnc>')
+@main.route('/files/<sha>/delete')
+def delete_file(sha):
+    db.delete_file(sha)
+    flash('The file and all its information was deleted.', category='success')
+    return redirect(url_for('main.files'))
+
+
+@main.route('/files/<sha>/gene/<gene_hgnc>')
 def get_gene(sha, gene_hgnc):
     file = db.get_file_by_sha(sha)
     chromosome = db.get_chromosome_for_gene(gene_hgnc)
     hgnc_info = get_hgnc_info(gene_hgnc)
-    effects_summary = analysis.effects_by_impact_summary_for_gene(sha, gene_hgnc).to_dict('records')
+    selected_biotypes = request.args.getlist('biotypes')
+    effects_summary = analysis.effects_by_impact_summary_for_gene(
+        sha,
+        gene_hgnc,
+        biotypes=selected_biotypes
+        ).to_dict('records')
     ordering = {
         'high': 4,
         'moderate': 3,
@@ -117,12 +130,17 @@ def get_gene(sha, gene_hgnc):
     for row in effects_summary:
         row['order'] = ordering[row['impact'].lower()]
     effects_summary.sort(reverse=True, key=lambda row: row['order'])
+
+    transcript_biotypes = analysis.get_transcript_biotypes(sha, gene_hgnc)
+
     return render_template(
         'gene.html',
         file=file,
         gene_hgnc=gene_hgnc,
         hgnc_info=hgnc_info,
         chromosome=chromosome,
+        transcript_biotypes=transcript_biotypes,
+        selected_biotypes=selected_biotypes,
         effects_summary=effects_summary)
 
 
@@ -134,7 +152,7 @@ def get_gene_variants(sha, gene_hgnc):
     effect = request.args.get('effect')
     impact = request.args.get('impact')
 
-    variants = db.get_variants(sha, gene_hgnc, effect=effect, impact=impact)
+    variants = db.get_variants(sha, gene_hgnc, effect=effect, impact=impact).to_dict('records')
     # info = pd.json_normalize(variants['info'].apply(lambda i: json.loads(i)), max_level=1)
     # variants = pd.concat([variants.drop(['info'], axis=1), info], axis=1)
     return render_template(

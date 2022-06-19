@@ -13,18 +13,17 @@
   <b>Variations:</b> {{ file_summary['variations'] }}<br/>
   <b>Effects:</b> {{ file_summary['effects'] }}<br/>
 
-
   <h3 class="title has-text-centered">Effects by impact</h3>
   <table id='impact-table' class="table is-bordered is-striped is-fullwidth is-hoverable">
     <thead>
       <tr>
-        <th class="is-vcentered has-text-centered">
+        <th rowspan="2" class="is-vcentered has-text-centered">
           Chromosome
         </th>
-        <th class="is-vcentered has-text-centered">
+        <th rowspan="2" class="is-vcentered has-text-centered">
           Gene       
         </th>
-        <th class="has-text-centered">
+        <th colspan="4" class="has-text-centered">
           Impact
         </th>
       </tr>
@@ -50,7 +49,7 @@
             {{ row['chrom'] }}
           </td>
           <td>
-            <a href="/files/{{ file['hash'] }}/{{ row['gene_hgnc'] }}">{{ row['gene_hgnc'] }}</a>
+            <a href="/files/{{ file['hash'] }}/gene/{{ row['gene_hgnc'] }}">{{ row['gene_hgnc'] }}</a>
           </td>
           <td>
             {{ row['high_impact']|int }}

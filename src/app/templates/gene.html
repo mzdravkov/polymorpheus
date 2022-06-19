@@ -35,6 +35,22 @@
     </div>
   </div>
   
+  <h3 class="subtitle is-3">Filters</h3>
+  <form class="form" method="GET">
+    <div class="field">
+      <label class="label">
+        Transcript biotypes:
+      </label>
+      <div class="control">
+        <select class="select" id="biotypes_select" name="biotypes" multiple style="min-width: 200px" data-placeholder="Select transcript biotypes...">
+          {% for biotype in transcript_biotypes %}
+            <option value="{{ biotype }}" {% if biotype in selected_biotypes %} selected {% endif %}>{{ biotype }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    <button type="submit" class="button is-link">Filter</button>
+  </form>
 
   <h3 class="title has-text-centered">Effects by impact</h3>
   <table id='effects-table' class="table is-bordered is-striped is-fullwidth">
@@ -91,6 +107,8 @@ $(document).ready(function() {
         },
       ]
     });
+
+    $('#biotypes_select').chosen();
 });
 </script>
 {% endblock %}

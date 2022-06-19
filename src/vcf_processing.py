@@ -2,6 +2,7 @@ import os
 import shlex
 import re
 import csv
+import gzip
 import vcf
 import pandas as pd
 import numpy as np
@@ -189,6 +190,13 @@ def __remove_key(hashmap, key):
     return hashmap
 
 
+def __get_vcf_row_dict(vcf_record):
+    vcf_dict = vars(vcf_record)
+    vcf_dict['var_type'] = vcf_record.var_type
+    vcf_dict['var_subtype'] = vcf_record.var_subtype
+    return vcf_dict
+
+
 def parse_vcf(file):
     """
     Parses the given VCF file and returns two dataframes:
@@ -200,7 +208,7 @@ def parse_vcf(file):
     variants dataframe.
     """
     reader = vcf.Reader(open(file))
-    df = pd.DataFrame([vars(r) for r in reader])
+    df = pd.DataFrame([__get_vcf_row_dict(r) for r in reader])
 
     # Get snpEff annotations as dataframe.
     # Each row in the vcf may have multiple annotations
@@ -250,7 +258,14 @@ def validate_vcf(file):
     - The reference genome used for the VCF is supported.
     """
     header_lines = []
-    with open(file, 'r') as vcf:
+
+    input_file = None
+    if file.endswith('.gz'):
+        input_file = gzip.open(file, 'rt')
+    else:
+        input_file = open(file, 'r')
+
+    with input_file as vcf:
         for line in vcf:
             if not line.startswith('##'):
                 break
