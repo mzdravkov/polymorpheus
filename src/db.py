@@ -221,6 +221,34 @@ def get_chromosome_for_gene(gene_hgnc):
 		return chrom
 
 
+def get_variants(sha, gene_hgnc, effect=None, impact=None):
+	with __lock.read:
+		db = duckdb.connect(database='db.duckdb', read_only=True)
+		variants_df = None
+		if not effect and not impact:
+			variants_df =  db.execute('SELECT pos, ref, alt FROM variants WHERE file_hash = ? AND gene_hgnc = ?', (sha, gene_hgnc)).fetch_df()
+		else:
+			query = """
+			SELECT pos, ref, v.alt
+			FROM variants v
+			JOIN annotations a ON v.file_hash = a.file_hash AND v.gene_hgnc = a.gene_hgnc AND v.gene_variation = a.gene_variation
+			WHERE v.file_hash = ?
+			  AND v.gene_hgnc = ?
+			"""
+
+			if effect:
+				query += ' AND effect = ?'
+			if impact:
+				query += ' AND impact = ?'
+
+			params = [sha, gene_hgnc] + [p for p in [effect, impact] if p]
+
+			print(params)
+			variants_df =  db.execute(query, params).fetch_df()
+		db.close()
+		return variants_df
+
+
 def read_query(query, params):
 	with __lock.read:
 		db = duckdb.connect(database='db.duckdb', read_only=True)

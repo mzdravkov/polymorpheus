@@ -26,6 +26,17 @@
 
     <div class="hero-body">
         <div class="container">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="notification is-{{ category if category is not none else 'info' }}">
+                        <button class="delete" aria-label="delete"></button>
+                        {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
             {% block content %}
             {% endblock %}
         </div>
@@ -33,6 +44,14 @@
 
     <script src="{{ url_for('static', filename='js/jquery-3.6.0.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/datatables.min.js') }}"></script>
+
+    <script>
+        $(document).ready(function() {
+            $('button.delete').click(function() {
+                $(this).parent().remove();
+            });
+        });
+    </script>
 
     {% block js %}
     {% endblock %}

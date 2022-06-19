@@ -6,14 +6,6 @@
 </h1>
 
 <div class="box" style="min-height: 70vh">
-  {% with messages = get_flashed_messages() %}
-    {% if messages %}
-        <div class="notification is-danger">
-            {{ messages[0] }}
-        </div>
-    {% endif %}
-  {% endwith %}
-
   <a class="button is-link mb-4" href="/">⇦ Back to files</a>
 
   <hr/>
@@ -26,13 +18,13 @@
   <table id='impact-table' class="table is-bordered is-striped is-fullwidth is-hoverable">
     <thead>
       <tr>
-        <th rowspan="2" class="is-vcentered has-text-centered">
+        <th class="is-vcentered has-text-centered">
           Chromosome
         </th>
-        <th rowspan="2" class="is-vcentered has-text-centered">
+        <th class="is-vcentered has-text-centered">
           Gene       
         </th>
-        <th colspan="4" class="has-text-centered">
+        <th class="has-text-centered">
           Impact
         </th>
       </tr>

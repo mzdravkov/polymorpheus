@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1 class="title has-text-centered">
+  <b>{{ hgnc_info['name'] }} ({{ gene_hgnc }})
+</h1>
+<h3 class="subtitle has-text-centered">
+  {{ file['name'] }}
+</h3>
+
+<div class="box" style="min-height: 70vh">
+  <a class="button is-link mb-4" href="/files/{{ file['hash'] }}/{{ gene_hgnc }}">⇦ Back to gene</a>
+
+  <hr/>
+
+  {{ variants.to_html(table_id='variants_table' ,index=False, classes=['table', 'is-bordered', 'is-striped', 'is-fullwidth', 'is-hoverable'])|safe }}
+
+  <!-- <h3 class="title has-text-centered">Variants</h3>
+  <table id='effects-table' class="table is-bordered is-striped is-fullwidth is-hoverable">
+    <thead>
+      <tr>
+        <th>
+          Impact (numeric)
+        </th>
+        <th class="is-vcentered has-text-centered">
+          Impact
+        </th>
+        <th class="is-vcentered has-text-centered">
+          Effect       
+        </th>
+        <th class="has-text-centered">
+          Count
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in effects_summary %}
+        <tr>
+          <td>
+            {{ row['order'] }}
+          </td>
+          <td>
+            {{ row['impact'] }}
+          </td>
+          <td>
+            {{ row['effect'] }}
+          </td>
+          <td>
+            {{ row['count']|int }}
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table> -->
+</div>
+
+{% endblock %}
+
+{% block js %}
+<script>
+$(document).ready(function() {
+    $('#variants_table').DataTable({
+      paging: true,
+      pageLength: 100,
+    });
+});
+</script>
+{% endblock %}

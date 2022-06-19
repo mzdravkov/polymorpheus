@@ -16,6 +16,9 @@ from config import CONFIG
 import utils
 
 
+ACCEPTED_REFERENCE_GENOMES = ('GRCh38')
+
+
 class VCF_COLUMNS(Enum):
     CHROM  = 0
     POS    = 1
@@ -94,6 +97,10 @@ class ANN_COLUMNS(Enum):
     NOTE = 15
 
 
+class VCFParsingException(Exception):
+    pass
+
+
 def __construct_pipe(*args):
     if len(args) == 0:
         return
@@ -129,6 +136,10 @@ def __get_gene_HGNC(vcf_line):
 
 
 def create_annotated_vcf_files_for_genes(file, ref_genome, gene_names_file):
+    """
+    Takes a VCF file, reference genome name and file containing one gene HGNC per line and
+    parses the VCF file to annotate it and split it into a set of annotated per-gene VCF files.
+    """
     commands = [
         __get_annotation_cmd(file, ref_genome),
         __get_filter_by_genes_cmd(gene_names_file)
@@ -171,7 +182,6 @@ def create_annotated_vcf_files_for_genes(file, ref_genome, gene_names_file):
         file.close()
 
     return files
-
 
 
 def __remove_key(hashmap, key):
@@ -231,6 +241,45 @@ def parse_vcf(file):
     df.columns = [col + '_pos' if col in ('start', 'end') else col.lower() for col in df.columns]
 
     return df, annotations_df
+
+
+def validate_vcf(file):
+    """
+    Validates that the VCF can be parsed correctly by the software. Checks:
+    - The VCF file format is >= v4.0.
+    - The reference genome used for the VCF is supported.
+    """
+    header_lines = []
+    with open(file, 'r') as vcf:
+        for line in vcf:
+            if not line.startswith('##'):
+                break
+            header_lines.append(line)
+    
+    fileformat_line = next((l for l in header_lines if l.startswith('##fileformat')), None)
+
+    if not fileformat_line:
+        raise VCFParsingException("Cannot find fileformat header.")
+
+    version_match = re.match(r"##fileformat=VCFv(?P<version>[0-9.]+)", fileformat_line)
+    if version_match:
+        try:
+            version = float(version_match.group('version'))
+        except:
+            raise VCFParsingException("Cannot parse ##fileformat header")
+
+        if version < 4:
+            raise VCFParsingException("VCF files with version older than 4 are not supported.")
+    else:
+        raise VCFParsingException("Cannot parse ##fileformat header")
+
+    reference_line = next((l for l in header_lines if l.startswith('##fileformat')), None)
+
+    if not reference_line:
+        raise VCFParsingException("Cannot find reference header.")
+
+    if not any(re.search(ref, reference_line, flags=re.IGNORECASE) for ref in ACCEPTED_REFERENCE_GENOMES):
+        raise VCFParsingException("Unsupported genome reference version. Should be one of {}".format(ACCEPTED_REFERENCE_GENOMES))
 
 
 

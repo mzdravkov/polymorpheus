@@ -6,14 +6,6 @@
 </h1>
 
 <div class="box" style="min-height: 70vh">
-  {% with messages = get_flashed_messages() %}
-    {% if messages %}
-        <div class="notification is-success">
-            {{ messages[0] }}
-        </div>
-    {% endif %}
-  {% endwith %}
-
   <a class="button is-link mb-4" href="/files/new">Add a file</a>
 
   <table id='files-table' class="table is-striped is-fullwidth is-hoverable">

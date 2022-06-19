@@ -1,7 +1,7 @@
 import os
 from datetime import datetime
 from vcf_processing import create_annotated_vcf_files_for_genes
-from vcf_processing import parse_vcf
+from vcf_processing import parse_vcf, validate_vcf
 
 from db import get_file_by_sha, save_file, save_gene_data, update_file_status
 from utils import sha256sum, get_data_dir
@@ -26,6 +26,7 @@ def parse(vcf_file, genes_file):
         print('Parsing the data and saving it to the database')
         for gene in gene_to_vcf:
             gene_vcf = gene_to_vcf[gene].name
+            validate_vcf(gene_vcf)
             variants, annotations = parse_vcf(gene_vcf)
             
             save_gene_data(vcf_sha, gene, variants, annotations)
