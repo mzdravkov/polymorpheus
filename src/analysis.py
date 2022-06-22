@@ -25,7 +25,6 @@ def effects_by_impact_summary_for_gene(file_hash, gene_hgnc, biotypes=None):
         GROUP BY 1, 2
         ORDER BY 1 ASC, 3 DESC
         """.format(biotypes=','.join(['?'] * len(biotypes)))
-        print(query)
         return db.read_query(query, [file_hash, gene_hgnc] + biotypes)
     else:
         query = """
@@ -87,10 +86,11 @@ def get_transcript_biotypes(file_hash, gene_hgnc):
     query = """
     SELECT DISTINCT transcript_biotype
     FROM annotations
-    WHERE file_hash = ? AND gene_hgnc = ?
+    WHERE file_hash = ?
+      AND gene_hgnc = ?
+      AND effect NOT IN ('intergenic_region')
     """
-    df = db.read_query(query, (file_hash, gene_hgnc))
-    return [biotype if biotype else 'n/a' for biotype in df['transcript_biotype']]
+    return db.read_query(query, (file_hash, gene_hgnc))['transcript_biotype'].tolist()
 
 
 def get_chromosomes(file_hash):
