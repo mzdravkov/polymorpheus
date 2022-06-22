@@ -13,6 +13,23 @@
   <b>Variations:</b> {{ file_summary['variations'] }}<br/>
   <b>Effects:</b> {{ file_summary['effects'] }}<br/>
 
+  <h3 class="subtitle is-3 mt-5">Filters</h3>
+  <form class="form" method="GET">
+    <div class="field">
+      <label class="label">
+        Chromosomes:
+      </label>
+      <div class="control">
+        <select class="select" id="chromosome_select" name="chromosomes" multiple style="min-width: 200px" data-placeholder="Select chromosome...">
+          {% for chromosome in chromosomes %}
+            <option value="{{ chromosome }}" {% if chromosome in selected_chromosomes %} selected {% endif %}>{{ chromosome }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    <button type="submit" class="button is-link">Filter</button>
+  </form>
+
   <h3 class="title has-text-centered">Effects by impact</h3>
   <table id='impact-table' class="table is-bordered is-striped is-fullwidth is-hoverable">
     <thead>
@@ -77,6 +94,8 @@ $(document).ready(function() {
     $('#impact-table').DataTable({
       pageLength: 50,
     });
+
+    $('#chromosome_select').chosen();
 });
 </script>
 {% endblock %}

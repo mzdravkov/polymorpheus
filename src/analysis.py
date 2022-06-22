@@ -91,12 +91,3 @@ def get_transcript_biotypes(file_hash, gene_hgnc):
       AND effect NOT IN ('intergenic_region')
     """
     return db.read_query(query, (file_hash, gene_hgnc))['transcript_biotype'].tolist()
-
-
-def get_chromosomes(file_hash):
-    query = """
-    SELECT DISTINCT chrom
-    FROM variants
-    WHERE file_hash = ? AND gene_hgnc = ?
-    """
-    return db.read_query(query, (file_hash,))

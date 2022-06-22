@@ -93,14 +93,22 @@ def upload_file():
 
 @main.route('/files/<sha>')    
 def file_summary(sha):
+    selected_chromosomes = request.args.getlist('chromosomes')
     file = db.get_file_by_sha(sha)
     file_summary = analysis.file_summary(sha).to_dict('records')[0]
     impact_summary = analysis.impact_summary(sha).to_dict('records')
+    chromosomes = list({row['chrom']: None for row in impact_summary})
+
+    if selected_chromosomes:
+        impact_summary = [x for x in impact_summary if x['chrom'] in selected_chromosomes]
+
     return render_template(
         'file.html',
         file=file,
         file_summary=file_summary,
-        impact_summary=impact_summary)
+        impact_summary=impact_summary,
+        chromosomes=chromosomes,
+        selected_chromosomes=selected_chromosomes)
 
 
 @main.route('/files/<sha>/delete')
