@@ -1,4 +1,5 @@
 import os
+import pysam
 from datetime import datetime
 from vcf_processing import create_annotated_vcf_files_for_genes
 from vcf_processing import parse_vcf, validate_vcf
@@ -30,4 +31,5 @@ def parse(vcf_file, genes_file):
             variants, annotations = parse_vcf(gene_vcf)
             
             save_gene_data(vcf_sha, gene, variants, annotations)
+            pysam.tabix_index(gene_vcf, preset='vcf')
         update_file_status(vcf_sha, 'processed')

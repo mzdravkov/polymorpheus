@@ -10,6 +10,7 @@ from flask import request
 from flask import redirect
 from flask import url_for
 from flask import Markup
+from flask import send_from_directory
 from werkzeug.utils import secure_filename
 import pandas as pd
 
@@ -162,19 +163,28 @@ def get_gene_variants(sha, gene_hgnc):
     selected_impacts = request.args.getlist('impacts')
     selected_feature_types = request.args.getlist('feature_types')
 
-    variants = db.get_variants(
+    variants_df = db.get_variants(
         sha,
         gene_hgnc,
         biotypes=selected_biotypes,
         effects=selected_effects,
         impacts=selected_impacts,
         feature_types=selected_feature_types
-    ).to_dict('records')
+    )
 
     transcript_biotypes = analysis.get_transcript_biotypes(sha, gene_hgnc)
     effects = analysis.get_effects(sha, gene_hgnc)
     impacts = analysis.get_impacts(sha, gene_hgnc)
     feature_types = analysis.get_feature_types(sha, gene_hgnc)
+
+    chromosome = db.get_chromosome_for_gene(gene_hgnc)
+    min_variant_pos = variants_df['start_pos'].min()
+    max_variant_pos = variants_df['end_pos'].max()
+    distance = max_variant_pos - min_variant_pos
+    start_pos = max(min_variant_pos - 0.1*distance, 0)
+    end_pos = max_variant_pos + 0.1*distance
+
+    variants = variants_df.to_dict('records')
 
     # info = pd.json_normalize(variants['info'].apply(lambda i: json.loads(i)), max_level=1)
     # variants = pd.concat([variants.drop(['info'], axis=1), info], axis=1)
@@ -191,4 +201,23 @@ def get_gene_variants(sha, gene_hgnc):
         impacts=impacts,
         selected_impacts=selected_impacts,
         feature_types=feature_types,
-        selected_feature_types=selected_feature_types)
+        selected_feature_types=selected_feature_types,
+        chromosome=chromosome,
+        start_pos=start_pos,
+        end_pos=end_pos)
+
+
+@main.route('/files/<sha>/<gene_hgnc>/vcf')
+def get_gene_vcf(sha, gene_hgnc):
+    file = db.get_file_by_sha(sha)
+    directory = os.path.join(main.root_path, '..', '..', 'data', 'intermediary', file['name'])
+    file_name = gene_hgnc + '.vcf.gz'
+    return send_from_directory(directory, file_name, as_attachment=True, attachment_filename=file_name)
+
+
+@main.route('/files/<sha>/<gene_hgnc>/index')
+def get_gene_index(sha, gene_hgnc):
+    file = db.get_file_by_sha(sha)
+    directory = os.path.join(main.root_path, '..', '..', 'data', 'intermediary', file['name'])
+    file_name = gene_hgnc + '.vcf.gz.tbi'
+    return send_from_directory(directory, file_name, as_attachment=True, attachment_filename=file_name)

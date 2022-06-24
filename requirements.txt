@@ -6,3 +6,4 @@ Flask
 rwmutex
 Babel
 requests
+pysam

@@ -3,6 +3,8 @@ Integrated toolkit for analysing gene variants and their potential effect on age
 
 # Setup
 
+TODO: describe external dependencies: snpEff
+
 ```bash
 $ python -m venv env
 $ source env/bin/activate

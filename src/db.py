@@ -251,7 +251,6 @@ def get_variants(sha, gene_hgnc, effects=None, impacts=None, biotypes=None, feat
 		if feature_types:
 			query += __in_filter('feature_type', feature_types)
 
-
 		params = [sha, gene_hgnc] + [v for p in [effects, impacts, biotypes, feature_types] for v in p if p]
 
 		variants_df =  db.execute(query, params).fetch_df()

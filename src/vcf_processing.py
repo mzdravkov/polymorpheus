@@ -297,6 +297,5 @@ def validate_vcf(file):
         raise VCFParsingException("Unsupported genome reference version. Should be one of {}".format(ACCEPTED_REFERENCE_GENOMES))
 
 
-
 # create_annotated_vcf_files_for_genes("/home/me/ALL.chrX.shapeit2_integrated_snvindels_v2a_27022019.GRCh38.phased.vcf", "GRCh38.105", "/home/me/Downloads/snpEff/test_gene_names.csv")
 # print(parse_vcf('data/intermediary/ALL.chrX.shapeit2_integrated_snvindels_v2a_27022019.GRCh38.phased.vcf/IL9R.vcf'))

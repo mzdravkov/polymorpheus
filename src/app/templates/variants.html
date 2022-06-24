@@ -13,8 +13,12 @@
 
   <hr/>
 
+  <div id="browser_div" class="mt-2"></div>
+
+  <h3 class="title has-text-centered mt-6">Variants</h3>
+
   <h3 class="subtitle is-3">Filters</h3>
-  <form class="form" method="GET">
+  <form class="form mb-6" method="GET">
     <div class="columns">
       <div class="column">
         <div class="field">
@@ -22,7 +26,7 @@
             Transcript biotypes:
           </label>
           <div class="control">
-            <select class="select" id="biotypes_select" name="biotypes" multiple style="min-width: 200px" data-placeholder="Select transcript biotypes...">
+            <select class="select" id="biotypes_select" name="biotypes" multiple style="width: 100%" data-placeholder="Select transcript biotypes...">
               {% for biotype in transcript_biotypes %}
                 <option value="{{ biotype }}" {% if biotype in selected_biotypes %} selected {% endif %}>{{ biotype }}</option>
               {% endfor %}
@@ -37,7 +41,7 @@
             Impacts:
           </label>
           <div class="control">
-            <select class="select" id="impacts_select" name="impacts" multiple style="min-width: 200px" data-placeholder="Select impacts...">
+            <select class="select" id="impacts_select" name="impacts" multiple style="width: 100%" data-placeholder="Select impacts...">
               {% for impact in impacts %}
                 <option value="{{ impact }}" {% if impact in selected_impacts %} selected {% endif %}>{{ impact }}</option>
               {% endfor %}
@@ -52,7 +56,7 @@
             Effects:
           </label>
           <div class="control">
-            <select class="select" id="effects_select" name="effects" multiple style="min-width: 200px" data-placeholder="Select effects...">
+            <select class="select" id="effects_select" name="effects" multiple style="width: 100%" data-placeholder="Select effects...">
               {% for effect in effects %}
                 <option value="{{ effect }}" {% if effect in selected_effects %} selected {% endif %}>{{ effect }}</option>
               {% endfor %}
@@ -67,7 +71,7 @@
             Feature types:
           </label>
           <div class="control">
-            <select class="select" id="feature_types_select" name="feature_types" multiple style="min-width: 200px" data-placeholder="Select feature types...">
+            <select class="select" id="feature_types_select" name="feature_types" multiple style="width: 100%" data-placeholder="Select feature types...">
               {% for feature_type in feature_types %}
                 <option value="{{ feature_type }}" {% if feature_type in selected_feature_types %} selected {% endif %}>{{ feature_type }}</option>
               {% endfor %}
@@ -77,10 +81,10 @@
       </div>
     </div>
 
-    <button type="submit" class="button is-link">Filter</button>
+    <button type="submit" class="button is-link is-pulled-right">Filter</button>
   </form>
+  <br/>
 
-  <h3 class="title has-text-centered">Variants</h3>
   <table id='variants_table' class="table is-bordered is-striped is-fullwidth is-hoverable">
     <thead>
       <tr>
@@ -131,6 +135,8 @@
   </table>
 </div>
 
+<script src="{{ url_for('static', filename='js/igv.min.js') }}"></script>
+
 {% endblock %}
 
 {% block js %}
@@ -145,6 +151,30 @@ $(document).ready(function() {
     $('#impacts_select').chosen();
     $('#effects_select').chosen();
     $('#feature_types_select').chosen();
+
+  var igvDiv = document.getElementById("browser_div");
+  var options =
+  {
+    genome: "hg38",
+    locus: "chr{{ chromosome }}:{{ start_pos }}-{{ end_pos }}",
+    "showAllChromosomes": false,
+    "showChromosomeWidget": false,
+    tracks: [
+      {
+        "name": "Variants",
+        "url": "{{ url_for('main.get_gene_vcf', sha=file['hash'], gene_hgnc=gene_hgnc, _external=True) }}",
+        "indexURL": "{{ url_for('main.get_gene_index', sha=file['hash'], gene_hgnc=gene_hgnc, _external=True) }}",
+        "format": "vcf",
+        "displayMode": "EXPANDED"
+      }
+    ]
+  };
+
+  igv.createBrowser(igvDiv, options)
+    .then(function (browser) {
+      console.log("Created IGV browser");
+    })
 });
+
 </script>
 {% endblock %}
