@@ -13,6 +13,72 @@
 
   <hr/>
 
+  <h3 class="subtitle is-3">Filters</h3>
+  <form class="form" method="GET">
+    <div class="columns">
+      <div class="column">
+        <div class="field">
+          <label class="label">
+            Transcript biotypes:
+          </label>
+          <div class="control">
+            <select class="select" id="biotypes_select" name="biotypes" multiple style="min-width: 200px" data-placeholder="Select transcript biotypes...">
+              {% for biotype in transcript_biotypes %}
+                <option value="{{ biotype }}" {% if biotype in selected_biotypes %} selected {% endif %}>{{ biotype }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="column">
+        <div class="field">
+          <label class="label">
+            Impacts:
+          </label>
+          <div class="control">
+            <select class="select" id="impacts_select" name="impacts" multiple style="min-width: 200px" data-placeholder="Select impacts...">
+              {% for impact in impacts %}
+                <option value="{{ impact }}" {% if impact in selected_impacts %} selected {% endif %}>{{ impact }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="column">
+        <div class="field">
+          <label class="label">
+            Effects:
+          </label>
+          <div class="control">
+            <select class="select" id="effects_select" name="effects" multiple style="min-width: 200px" data-placeholder="Select effects...">
+              {% for effect in effects %}
+                <option value="{{ effect }}" {% if effect in selected_effects %} selected {% endif %}>{{ effect }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="column">
+        <div class="field">
+          <label class="label">
+            Feature types:
+          </label>
+          <div class="control">
+            <select class="select" id="feature_types_select" name="feature_types" multiple style="min-width: 200px" data-placeholder="Select feature types...">
+              {% for feature_type in feature_types %}
+                <option value="{{ feature_type }}" {% if feature_type in selected_feature_types %} selected {% endif %}>{{ feature_type }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button type="submit" class="button is-link">Filter</button>
+  </form>
 
   <h3 class="title has-text-centered">Variants</h3>
   <table id='variants_table' class="table is-bordered is-striped is-fullwidth is-hoverable">
@@ -74,6 +140,11 @@ $(document).ready(function() {
       paging: true,
       pageLength: 100,
     });
+
+    $('#biotypes_select').chosen();
+    $('#impacts_select').chosen();
+    $('#effects_select').chosen();
+    $('#feature_types_select').chosen();
 });
 </script>
 {% endblock %}

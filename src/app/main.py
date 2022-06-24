@@ -157,10 +157,25 @@ def get_gene_variants(sha, gene_hgnc):
     file = db.get_file_by_sha(sha)
     hgnc_info = get_hgnc_info(gene_hgnc)
 
-    effect = request.args.get('effect')
-    impact = request.args.get('impact')
+    selected_biotypes = request.args.getlist('biotypes')
+    selected_effects = request.args.getlist('effects')
+    selected_impacts = request.args.getlist('impacts')
+    selected_feature_types = request.args.getlist('feature_types')
 
-    variants = db.get_variants(sha, gene_hgnc, effect=effect, impact=impact).to_dict('records')
+    variants = db.get_variants(
+        sha,
+        gene_hgnc,
+        biotypes=selected_biotypes,
+        effects=selected_effects,
+        impacts=selected_impacts,
+        feature_types=selected_feature_types
+    ).to_dict('records')
+
+    transcript_biotypes = analysis.get_transcript_biotypes(sha, gene_hgnc)
+    effects = analysis.get_effects(sha, gene_hgnc)
+    impacts = analysis.get_impacts(sha, gene_hgnc)
+    feature_types = analysis.get_feature_types(sha, gene_hgnc)
+
     # info = pd.json_normalize(variants['info'].apply(lambda i: json.loads(i)), max_level=1)
     # variants = pd.concat([variants.drop(['info'], axis=1), info], axis=1)
     return render_template(
@@ -168,4 +183,12 @@ def get_gene_variants(sha, gene_hgnc):
         file=file,
         hgnc_info=hgnc_info,
         gene_hgnc=gene_hgnc,
-        variants=variants)
+        variants=variants,
+        transcript_biotypes=transcript_biotypes,
+        selected_biotypes=selected_biotypes,
+        effects=effects,
+        selected_effects=selected_effects,
+        impacts=impacts,
+        selected_impacts=selected_impacts,
+        feature_types=feature_types,
+        selected_feature_types=selected_feature_types)

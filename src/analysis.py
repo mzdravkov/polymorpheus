@@ -91,3 +91,36 @@ def get_transcript_biotypes(file_hash, gene_hgnc):
       AND effect NOT IN ('intergenic_region')
     """
     return db.read_query(query, (file_hash, gene_hgnc))['transcript_biotype'].tolist()
+
+
+def get_effects(file_hash, gene_hgnc):
+    query = """
+    SELECT DISTINCT effect
+    FROM annotations
+    WHERE file_hash = ?
+      AND gene_hgnc = ?
+      AND effect NOT IN ('intergenic_region')
+    """
+    return db.read_query(query, (file_hash, gene_hgnc))['effect'].tolist()
+
+
+def get_impacts(file_hash, gene_hgnc):
+    query = """
+    SELECT DISTINCT impact
+    FROM annotations
+    WHERE file_hash = ?
+      AND gene_hgnc = ?
+      AND effect NOT IN ('intergenic_region')
+    """
+    return db.read_query(query, (file_hash, gene_hgnc))['impact'].tolist()
+
+
+def get_feature_types(file_hash, gene_hgnc):
+    query = """
+    SELECT DISTINCT feature_type
+    FROM annotations
+    WHERE file_hash = ?
+      AND gene_hgnc = ?
+      AND effect NOT IN ('intergenic_region')
+    """
+    return db.read_query(query, (file_hash, gene_hgnc))['feature_type'].tolist()

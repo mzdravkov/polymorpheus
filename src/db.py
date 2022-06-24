@@ -103,20 +103,21 @@ with __lock.write:
 INSERT_VARIANTS_QUERY = """
 INSERT INTO variants
 SELECT
-	'{}' as file_hash,
-	'{}' as gene_hgnc,
+	'{}' AS file_hash,
+	'{}' AS gene_hgnc,
 	gene_variation,
 	chrom,
 	pos,
 	id,
 	ref,
-	str_split(alt, ',') as alt,
-	qual, str_split(filter, ',') as filter,
+	str_split(alt, ',') AS alt,
+	qual,
+	str_split(filter, ',') AS filter,
 	info,
 	format,
 	start_pos,
 	end_pos,
-	str_split(alleles, ',') as alleles,
+	str_split(alleles, ',') AS alleles,
 	affected_start,
 	affected_end,
 	var_type,
@@ -225,35 +226,35 @@ def get_chromosome_for_gene(gene_hgnc):
 		return chrom
 
 
-def get_variants(sha, gene_hgnc, effect=None, impact=None):
+def __in_filter(column, values):
+	return '  AND {} IN ({})'.format(column, ','.join(['?']*len(values)))
+
+
+def get_variants(sha, gene_hgnc, effects=None, impacts=None, biotypes=None, feature_types=None):
 	with __lock.read:
 		db = duckdb.connect(database='db.duckdb', read_only=True)
 		variants_df = None
-		if not effect and not impact:
-			query = """
-			SELECT start_pos, end_pos, ref, alt, var_type, var_subtype
-			FROM variants
-			WHERE file_hash = ? AND gene_hgnc = ?
-			"""
-			variants_df =  db.execute(query, (sha, gene_hgnc)).fetch_df()
-		else:
-			query = """
-			SELECT start_pos, end_pos, ref, v.alt, var_type, var_subtype
-			FROM variants v
-			JOIN annotations a ON v.file_hash = a.file_hash AND v.gene_hgnc = a.gene_hgnc AND v.gene_variation = a.gene_variation
-			WHERE v.file_hash = ?
-			  AND v.gene_hgnc = ?
-			"""
+		query = """
+		SELECT DISTINCT start_pos, end_pos, ref, a.alt, var_type, var_subtype
+		FROM variants v
+		JOIN annotations a ON v.file_hash = a.file_hash AND v.gene_hgnc = a.gene_hgnc AND v.gene_variation = a.gene_variation
+		WHERE v.file_hash = ?
+			AND v.gene_hgnc = ?
+        """
 
-			if effect:
-				query += ' AND effect = ?'
-			if impact:
-				query += ' AND impact = ?'
+		if effects:
+			query += __in_filter('effect', effects)
+		if impacts:
+			query += __in_filter('impact', impacts)
+		if biotypes:
+			query += __in_filter('biotype', biotypes)
+		if feature_types:
+			query += __in_filter('feature_type', feature_types)
 
-			params = [sha, gene_hgnc] + [p for p in [effect, impact] if p]
 
-			print(params)
-			variants_df =  db.execute(query, params).fetch_df()
+		params = [sha, gene_hgnc] + [v for p in [effects, impacts, biotypes, feature_types] for v in p if p]
+
+		variants_df =  db.execute(query, params).fetch_df()
 		db.close()
 		return variants_df
 
