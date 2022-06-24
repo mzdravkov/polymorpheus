@@ -106,6 +106,9 @@
         <th class="has-text-centered">
           Subtype
         </th>
+        <th class="has-text-centered">
+          Actions
+        </th>
       </tr>
     </thead>
     <tbody>
@@ -129,6 +132,9 @@
           <td>
             {{ row['var_subtype'] }}
           </td>
+          <td>
+            <button class="button is-small is-info is-light" onclick="focusBrowser('{{chromosome}}', {{ row['start_pos'] }}, {{ row['end_pos'] }})">Focus in browser</button>
+          </td>
         </tr>
       {% endfor %}
     </tbody>
@@ -141,6 +147,13 @@
 
 {% block js %}
 <script>
+var igvBrowser;
+
+function focusBrowser(chrom, start, end) {
+  igvBrowser.search(`chr${chrom}:${start}-${end}`);
+  document.getElementById("browser_div").scrollIntoView();
+}
+
 $(document).ready(function() {
     $('#variants_table').DataTable({
       paging: true,
@@ -165,14 +178,25 @@ $(document).ready(function() {
         "url": "{{ url_for('main.get_gene_vcf', sha=file['hash'], gene_hgnc=gene_hgnc, _external=True) }}",
         "indexURL": "{{ url_for('main.get_gene_index', sha=file['hash'], gene_hgnc=gene_hgnc, _external=True) }}",
         "format": "vcf",
-        "displayMode": "EXPANDED"
+        "displayMode": "EXPANDED",
+        color: function (variant) {
+          switch (variant.type) {
+              case 'SNP':
+                  return "#03adfc";
+              case 'INDEL':
+                  return "#fcce03";
+              default:
+                  return "#2b2b2b";
+          }
+        }
       }
     ]
   };
 
+
   igv.createBrowser(igvDiv, options)
     .then(function (browser) {
-      console.log("Created IGV browser");
+      igvBrowser = browser;
     })
 });
 
