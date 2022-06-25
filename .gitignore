@@ -132,4 +132,5 @@ dmypy.json
 *.un~
 
 data/intermediary
+data/genes.csv
 uploads/

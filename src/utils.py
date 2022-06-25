@@ -23,3 +23,8 @@ def get_data_dir(file):
 
 def get_genes_from_file(file):
     return [gene.decode('utf-8').rstrip() for gene in file]
+
+
+def save_genes_to_file(genes, file):
+    with open(file, 'w') as f:
+        f.writelines(gene['name'] + '\n' for gene in genes)

@@ -24,6 +24,7 @@ from vcf_processing import validate_vcf, VCFParsingException
 
 main = Blueprint('main', __name__)
 
+GENES_FILE = 'data/genes.csv'
 
 UPLOAD_FOLDER = 'uploads'
 VCF_EXTENSIONS = {'vcf', 'vcf.gz'}
@@ -73,13 +74,14 @@ def validate_file_upload(fn):
 
 
 @main.route('/files/new', methods=['GET'])
-def upload_file_page():
-    return render_template('upload_file.html')
+def upload_vcf_page():
+    gene_sets = db.get_gene_sets()
+    return render_template('upload_vcf.html', gene_sets=gene_sets)
 
 
 @main.route('/files/new', methods=['POST'])
 @validate_file_upload
-def upload_file():
+def upload_vcf():
     file = request.files['file']
 
     if not is_vcf(file.filename):
@@ -99,13 +101,16 @@ def upload_file():
         try:
             validate_vcf(path)
         except VCFParsingException as e:
-            print(e)
             flash('Cannot process the VCF file: ' + str(e), category='danger')
             return redirect(url_for('main.files'))
 
         db.save_file(filename, vcf_sha, path, datetime.now())
-        # TODO: support changing the genes files
-        th = threading.Thread(target=lambda: parse(path, 'data/genes.csv'))
+
+        gene_set_id = request.form['gene_set']
+        genes = db.get_genes_for_gene_set(gene_set_id)
+        utils.save_genes_to_file(genes, GENES_FILE)
+
+        th = threading.Thread(target=lambda: parse(path, GENES_FILE))
         th.start()
         flash('File uploaded. Will start processing it in the background now. This may take a couple of minutes depending on the size of the file.', category='success')
         return redirect(url_for('main.files'))

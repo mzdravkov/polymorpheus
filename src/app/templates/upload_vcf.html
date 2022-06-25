@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1 class="title has-text-centered">
+  Upload a VCF file
+</h1>
+
+<div class="box" style="min-height: 70vh">
+  <a class="button is-link mb-4" href="/">⇦ Back to files</a>
+
+  <form id="file-upload-form" method="POST" enctype="multipart/form-data" class="form">
+    <div class="field">
+      <div class="file has-name is-fullwidth">
+        <label class="file-label">
+          <input class="file-input" type="file" name="file">
+          <span class="file-cta">
+            <span class="file-icon">
+              <i class="fas fa-upload"></i>
+            </span>
+            <span class="file-label">
+              Choose a VCF file…
+            </span>
+          </span>
+          <span class="file-name">
+          </span>
+        </label>
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="label">Gene set</label>
+      <div class="control">
+        <div class="select">
+          <select name="gene_set">
+            {% for gene_set in gene_sets %}
+              <option value="{{ gene_set['id'] }}">{{ gene_set['name'] }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="field is-grouped">
+      <div class="control">
+        <button class="button is-link" type="submit">Upload</button>
+      </div>
+    </div>
+  </form>
+</div>
+
+{% endblock %}
+
+{% block js %}
+<script>
+  $('#file-upload-form input[type=file').change(function() {
+    if (this.files.length > 0) {
+      $('#file-upload-form .file-name').text(this.files[0].name);
+    }
+  });
+</script>
+{% endblock %}
