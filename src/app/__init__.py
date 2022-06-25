@@ -19,4 +19,10 @@ def create_app():
         format="HH:mm dd.MM.y"
         return dates.format_datetime(value, format)
 
+    @app.template_filter()
+    def normalize_chromosome(chrom):
+        if chrom.startswith('chr'):
+            return chrom
+        return 'chr' + chrom
+
     return app

@@ -169,7 +169,7 @@ $(document).ready(function() {
   var options =
   {
     genome: "hg38",
-    locus: "chr{{ chromosome }}:{{ start_pos }}-{{ end_pos }}",
+    locus: "{{ chromosome|normalize_chromosome }}:{{ start_pos }}-{{ end_pos }}",
     "showAllChromosomes": false,
     "showChromosomeWidget": false,
     tracks: [

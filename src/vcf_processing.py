@@ -121,7 +121,7 @@ def __construct_pipe(*args):
 
 def __get_annotation_cmd(file, ref_genome):
     snpeff = os.path.join(CONFIG['snpEff_path'], 'snpEff.jar')
-    cmd = "java -Xmx8g -jar {} {} {}".format(snpeff, ref_genome, file)
+    cmd = "java -Xmx25g -jar {} ann -noStats {} {}".format(snpeff, ref_genome, file)
     return shlex.split(cmd)
 
 

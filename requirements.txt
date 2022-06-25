@@ -1,7 +1,7 @@
 pandas
 pyyaml
 PyVCF3
-duckdb
+duckdb>=0.4.0
 Flask
 rwmutex
 Babel

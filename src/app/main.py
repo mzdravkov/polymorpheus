@@ -1,6 +1,7 @@
 import os
 import threading
 import json
+import functools
 from datetime import datetime
 from flask import Flask
 from flask import Blueprint
@@ -16,7 +17,7 @@ import pandas as pd
 
 import db
 import analysis
-from utils import sha256sum
+import utils
 from tasks import parse
 from external import get_hgnc_info
 from vcf_processing import validate_vcf, VCFParsingException
@@ -25,7 +26,7 @@ main = Blueprint('main', __name__)
 
 
 UPLOAD_FOLDER = 'uploads'
-ALLOWED_EXTENSIONS = {'vcf', 'vcf.gz'}
+VCF_EXTENSIONS = {'vcf', 'vcf.gz'}
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -37,20 +38,25 @@ def files():
     return render_template('files.html', files=files)
 
 
-def allowed_file(filename):
-    for ext in ALLOWED_EXTENSIONS:
+def allowed_file(filename, extensios):
+    for ext in extensios:
         if filename.endswith('.' + ext):
             return True
     return False
 
 
-@main.route('/files/new', methods=['GET'])
-def upload_file_page():
-    return render_template('upload_file.html')
+def is_vcf(filename):
+    return allowed_file(filename, VCF_EXTENSIONS)
 
 
-@main.route('/files/new', methods=['POST'])
-def upload_file():
+def file_upload_validation(fn):
+
+    return fn()
+
+
+def validate_file_upload(fn):
+  @functools.wraps(fn)
+  def decorated_function(*args, **kwargs):
     # check if the post request has the file part
     if 'file' not in request.files:
         flash('No file part.', category='danger')
@@ -62,8 +68,21 @@ def upload_file():
     if file.filename == '':
         flash('No selected file.', category='danger')
         return redirect(request.url)
+    return fn(*args, **kwargs)
+  return decorated_function
 
-    if not allowed_file(file.filename):
+
+@main.route('/files/new', methods=['GET'])
+def upload_file_page():
+    return render_template('upload_file.html')
+
+
+@main.route('/files/new', methods=['POST'])
+@validate_file_upload
+def upload_file():
+    file = request.files['file']
+
+    if not is_vcf(file.filename):
         flash('Please upload a VCF file.', category='danger')
         return redirect(request.url)
 
@@ -71,7 +90,7 @@ def upload_file():
         filename = secure_filename(file.filename)
         path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(path)
-        vcf_sha = sha256sum(path)
+        vcf_sha = utils.sha256sum(path)
         existing_row = db.get_file_by_sha(vcf_sha)
         if existing_row:
             flash(Markup('File has already been uploaded and processed. <a href="/files/{}">Link to existing file</a>'.format(vcf_sha)), category='info')
@@ -221,3 +240,72 @@ def get_gene_index(sha, gene_hgnc):
     directory = os.path.join(main.root_path, '..', '..', 'data', 'intermediary', file['name'])
     file_name = gene_hgnc + '.vcf.gz.tbi'
     return send_from_directory(directory, file_name, as_attachment=True, attachment_filename=file_name)
+
+
+@main.route('/gene_sets')
+def list_gene_sets():
+    gene_sets = db.get_gene_sets()
+    return render_template('gene_sets.html', gene_sets=gene_sets)
+
+
+@main.route('/gene_sets/new', methods=['GET'])
+def upload_gene_set_page():
+    return render_template('upload_gene_set.html')
+
+
+@main.route('/gene_sets/new', methods=['POST'])
+@validate_file_upload
+def upload_gene_set():
+    file = request.files['file']
+
+    name = request.form['name']
+    description = request.form['description']
+    genes = utils.get_genes_from_file(file)
+
+    db.save_gene_set(name, description, genes)
+
+    flash('The new gene set was created.', category='success')
+    return redirect(url_for('main.list_gene_sets'))
+
+
+@main.route('/gene_sets/<id>/delete')
+def delete_gene_set(id):
+    db.delete_gene_set(id)
+    flash('The gene set was deleted.', category='success')
+    return redirect(url_for('main.list_gene_sets'))
+
+
+@main.route('/gene_sets/<id>')    
+def show_gene_set(id):
+    gene_set = db.get_gene_set_by_id(id)
+    genes = db.get_genes_for_gene_set(id)
+
+    return render_template(
+        'gene_set.html',
+        gene_set=gene_set,
+        genes=genes)
+
+
+@main.route('/gene_sets/<id>/add_gene')    
+def add_gene_to_gene_set_page(id):
+    gene_set = db.get_gene_set_by_id(id)
+
+    return render_template('gene_set_add_gene.html', gene_set=gene_set)
+
+
+@main.route('/gene_sets/<id>/add_gene', methods=["POST"])    
+def add_gene_to_gene_set(id):
+    gene_set = db.get_gene_set_by_id(id)
+    name = request.form['name']
+
+    db.save_gene_set_member(name, gene_set['id'])
+
+    flash('The gene was added to the dataset', category='success')
+    return redirect(url_for('main.show_gene_set', id=gene_set['id']))
+
+
+@main.route('/gene_sets/<gene_set_id>/remove_gene/<member_id>')
+def delete_gene_set_member(gene_set_id, member_id):
+    db.delete_gene_set_member(member_id)
+    flash('The gene was removed from the gene set.', category='success')
+    return redirect(url_for('main.show_gene_set', id=gene_set_id))

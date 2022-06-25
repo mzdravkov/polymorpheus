@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1 class="title has-text-centered">
+  Upload a gene set
+</h1>
+
+<div class="box" style="min-height: 70vh">
+  <a class="button is-link mb-4" href="/gene_sets">⇦ Back to gene sets</a>
+
+  <form id="file-upload-form" method="POST" enctype="multipart/form-data" class="form">
+    <div class="field">
+      <label class="label">Name</label>
+      <div class="control">
+        <input name="name" class="input" type="text" placeholder="Gene set name">
+      </div>
+    </div>
+    <div class="field">
+      <label class="label">Description</label>
+      <div class="control">
+        <textarea name="description" class="textarea" placeholder="Description"></textarea>
+      </div>
+    </div>
+
+    <article class="message is-info mt-6">
+      <div class="message-header">
+        <p>Note</p>
+        <button class="delete" aria-label="delete"></button>
+      </div>
+      <div class="message-body">
+        Please upload a text file containing one gene name (using HGNC) per line without any headers.
+      </div>
+    </article>
+    <div class="field file has-name is-fullwidth">
+    <label class="file-label">
+      <input class="file-input" type="file" name="file">
+      <span class="file-cta">
+        <span class="file-icon">
+          <i class="fas fa-upload"></i>
+        </span>
+        <span class="file-label">
+          Choose a file…
+        </span>
+      </span>
+      <span class="file-name">
+      </span>
+    </label>
+    </div>
+    <div class="field is-grouped">
+      <div class="control">
+        <button class="button is-link" type="submit">Save</button>
+      </div>
+    </div>
+  </form>
+</div>
+
+{% endblock %}
+
+{% block js %}
+<script>
+  $('#file-upload-form input[type=file').change(function() {
+    if (this.files.length > 0) {
+      $('#file-upload-form .file-name').text(this.files[0].name);
+    }
+  });
+</script>
+{% endblock %}

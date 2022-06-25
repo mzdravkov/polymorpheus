@@ -3,6 +3,7 @@ import json
 
 import numpy as np
 
+from datetime import datetime
 from utils import sha256sum
 
 from rwmutex import RWLock
@@ -10,9 +11,11 @@ from rwmutex import RWLock
 
 __lock = RWLock()
 
+DATABASE = 'db.duckdb'
+
 
 with __lock.write:
-	db = duckdb.connect(database='db.duckdb', read_only=False)
+	db = duckdb.connect(database=DATABASE, read_only=False)
 	db.execute(
 	"""
 	CREATE TABLE IF NOT EXISTS files (
@@ -95,6 +98,25 @@ with __lock.write:
 		PRIMARY KEY (file_hash, gene_hgnc, gene_variation, variation_annotation),
 		FOREIGN KEY(file_hash, gene_hgnc, gene_variation) REFERENCES variants(file_hash, gene_hgnc, gene_variation),
 	);
+
+	CREATE SEQUENCE IF NOT EXISTS gene_sets_id_seq START 1;
+
+	CREATE TABLE IF NOT EXISTS gene_sets (
+		id UINTEGER PRIMARY KEY,
+		name VARCHAR(1000) NOT NULL,
+		description VARCHAR(1000) NOT NULL,
+		created_at TIMESTAMP NOT NULL
+	);
+
+	CREATE SEQUENCE IF NOT EXISTS gene_set_members_id_seq START 1;
+
+	CREATE TABLE IF NOT EXISTS gene_set_members (
+		id UINTEGER PRIMARY KEY,
+		gene_set_id UINTEGER NOT NULL,
+		name VARCHAR(1000) NOT NULL,
+
+		FOREIGN KEY(gene_set_id) REFERENCES gene_sets(id)
+	);
 	"""
 	)
 	db.close()
@@ -154,7 +176,7 @@ FROM {}
 
 def save_gene_data(file_hash, gene, variants, annotations):
 	with __lock.write:
-		db = duckdb.connect(database='db.duckdb', read_only=False)
+		db = duckdb.connect(database=DATABASE, read_only=False)
 		db.execute('INSERT INTO genes (file_hash, gene_hgnc) VALUES (?, ?)', (file_hash, gene))
 
 		# add index inplace as a new column and rename it gene_variation
@@ -186,7 +208,7 @@ def save_gene_data(file_hash, gene, variants, annotations):
 
 def get_file_by_sha(sha):
 	with __lock.read:
-		db = duckdb.connect(database='db.duckdb', read_only=True)
+		db = duckdb.connect(database=DATABASE, read_only=True)
 		files = db.execute('SELECT * FROM files WHERE hash = ?', (sha,)).fetch_df().to_dict('records')
 		file = files[0] if files else None
 		db.close()
@@ -195,7 +217,7 @@ def get_file_by_sha(sha):
 
 def save_file(filename, sha, path, created_at, status='unprocessed'):
 	with __lock.write:
-		db = duckdb.connect(database='db.duckdb', read_only=False)
+		db = duckdb.connect(database=DATABASE, read_only=False)
 		db.execute(
 			'INSERT INTO files (hash, name, path, created_at, status) VALUES (?, ?, ?, ?, ?)',
 			(sha, filename, path, created_at, status))
@@ -204,14 +226,14 @@ def save_file(filename, sha, path, created_at, status='unprocessed'):
 
 def update_file_status(sha, status):
 	with __lock.write:
-		db = duckdb.connect(database='db.duckdb', read_only=False)
+		db = duckdb.connect(database=DATABASE, read_only=False)
 		db.execute('UPDATE files SET status=? WHERE hash = ?', (status, sha))
 		db.close()
 
 
 def get_files():
 	with __lock.read:
-		db = duckdb.connect(database='db.duckdb', read_only=True)
+		db = duckdb.connect(database=DATABASE, read_only=True)
 		files =  db.execute('SELECT * FROM files').fetch_df().to_dict('records')
 		db.close()
 		return files
@@ -219,7 +241,7 @@ def get_files():
 
 def get_chromosome_for_gene(gene_hgnc):
 	with __lock.read:
-		db = duckdb.connect(database='db.duckdb', read_only=True)
+		db = duckdb.connect(database=DATABASE, read_only=True)
 		chroms =  db.execute('SELECT chrom FROM variants WHERE gene_hgnc = ? LIMIT 1', (gene_hgnc,)).fetchone()
 		chrom = chroms[0] if chroms else None
 		db.close()
@@ -232,7 +254,7 @@ def __in_filter(column, values):
 
 def get_variants(sha, gene_hgnc, effects=None, impacts=None, biotypes=None, feature_types=None):
 	with __lock.read:
-		db = duckdb.connect(database='db.duckdb', read_only=True)
+		db = duckdb.connect(database=DATABASE, read_only=True)
 		variants_df = None
 		query = """
 		SELECT DISTINCT start_pos, end_pos, ref, a.alt, var_type, var_subtype
@@ -262,7 +284,7 @@ def get_variants(sha, gene_hgnc, effects=None, impacts=None, biotypes=None, feat
 
 def delete_file(sha):
 	with __lock.write:
-		db = duckdb.connect(database='db.duckdb', read_only=False)
+		db = duckdb.connect(database=DATABASE, read_only=False)
 		db.execute('DELETE FROM annotations WHERE file_hash = ?', (sha,))
 		db.execute('DELETE FROM variants WHERE file_hash = ?', (sha,))
 		db.execute('DELETE FROM genes WHERE file_hash = ?', (sha,))
@@ -271,9 +293,79 @@ def delete_file(sha):
 		db.close()
 
 
+def get_gene_sets():
+	with __lock.read:
+		db = duckdb.connect(database=DATABASE, read_only=True)
+		gene_sets =  db.execute('SELECT * FROM gene_sets').fetch_df().to_dict('records')
+		db.close()
+		return gene_sets
+
+
+def save_gene_set(name, description, genes):
+	with __lock.write:
+		db = duckdb.connect(database=DATABASE, read_only=False)
+		cursor = db.cursor()
+		insert_gene_set_query = """
+		INSERT INTO gene_sets (id, name, description, created_at)
+		VALUES (nextval('gene_sets_id_seq'), ?, ?, ?)
+		"""
+		cursor.execute(insert_gene_set_query, (name, description, datetime.now()))
+		insert_gene_query = """
+		INSERT INTO gene_set_members (id, name, gene_set_id)
+		VALUES (nextval('gene_set_members_id_seq'), ?, currval('gene_sets_id_seq'))
+		"""
+		db.executemany(insert_gene_query, [[gene] for gene in genes])
+		db.close()
+
+
+def delete_gene_set(id):
+	with __lock.write:
+		db = duckdb.connect(database=DATABASE, read_only=False)
+		db.execute('DELETE FROM gene_set_members WHERE gene_set_id = ?', (id,))
+		db.execute('DELETE FROM gene_sets WHERE id = ?', (id,))
+		db.close()
+
+
+def get_gene_set_by_id(id):
+	with __lock.read:
+		db = duckdb.connect(database=DATABASE, read_only=True)
+		query = 'SELECT * FROM gene_sets WHERE id = ?'
+		gene_sets = db.execute(query, (id,)).fetch_df().to_dict('records')
+		gene_set = gene_sets[0] if gene_sets else None
+		db.close()
+		return gene_set
+
+
+def get_genes_for_gene_set(id):
+	with __lock.read:
+		db = duckdb.connect(database=DATABASE, read_only=True)
+		query = 'SELECT * FROM gene_set_members WHERE gene_set_id = ?'
+		genes = db.execute(query, (id,)).fetch_df().to_dict('records')
+		db.close()
+		return genes
+
+
+def save_gene_set_member(name, gene_set_id):
+	with __lock.write:
+		db = duckdb.connect(database=DATABASE, read_only=False)
+		query = """
+		INSERT INTO gene_set_members (id, name, gene_set_id)
+		VALUES (nextval('gene_set_members_id_seq'), ?, ?)
+		"""
+		db.execute(query, (name, gene_set_id))
+		db.close()
+
+
+def delete_gene_set_member(id):
+	with __lock.write:
+		db = duckdb.connect(database=DATABASE, read_only=False)
+		db.execute('DELETE FROM gene_set_members WHERE id = ?', (id,))
+		db.close()
+
+
 def read_query(query, params):
 	with __lock.read:
-		db = duckdb.connect(database='db.duckdb', read_only=True)
+		db = duckdb.connect(database=DATABASE, read_only=True)
 		df = db.execute(query, params).fetch_df()
 		db.close()
 		return df

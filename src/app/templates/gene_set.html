@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1 class="title has-text-centered">
+  {{ gene_set['name'] }}
+</h1>
+
+<div class="box" style="min-height: 70vh">
+  <a class="button is-link mb-4" href="/gene_sets/{{ gene_set['id'] }}/add_gene">Add a new gene</a>
+
+  <table id='genes-table' class="table is-striped is-fullwidth is-hoverable">
+    <thead>
+      <th>
+        Name
+      </th>
+      <th>
+        Actions
+      </th>
+    </thead>
+    <tbody>
+      {% for gene in genes %}
+        <tr>
+          <td>
+            <a class="has-text-link" href="/gene_sets/{{ gene_set['id'] }}">{{ gene['name'] }}</a>
+          </td>
+          <td>
+            <a class="has-text-link ml-5" href="/gene_sets/{{ gene_set['id'] }}/remove_gene/{{ gene['id'] }}" onclick="return confirm('Are you sure you want to remove this gene from the gene set?')">Remove</a>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}
+
+{% block js %}
+<script>
+$(document).ready(function() {
+    $('#genes-table').DataTable({
+      pageLength: 50,
+    });
+});
+</script>
+{% endblock %}

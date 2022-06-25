@@ -19,3 +19,7 @@ def sha256sum(filename):
 def get_data_dir(file):
     dir_name = os.path.basename(file)
     return 'data/intermediary/{}'.format(dir_name)
+
+
+def get_genes_from_file(file):
+    return [gene.decode('utf-8').rstrip() for gene in file]

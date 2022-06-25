@@ -31,5 +31,5 @@ def parse(vcf_file, genes_file):
             variants, annotations = parse_vcf(gene_vcf)
             
             save_gene_data(vcf_sha, gene, variants, annotations)
-            pysam.tabix_index(gene_vcf, preset='vcf')
+            pysam.tabix_index(gene_vcf, preset='vcf', force=True)
         update_file_status(vcf_sha, 'processed')
