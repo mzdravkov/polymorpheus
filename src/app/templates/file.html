@@ -6,7 +6,12 @@
 </h1>
 
 <div class="box" style="min-height: 70vh">
-  <a class="button is-link mb-4" href="/">⇦ Back to files</a>
+  <nav class="breadcrumb" aria-label="breadcrumbs">
+    <ul>
+      <li><a href="/">Files</a></li>
+      <li class="is-active"><a href="#" aria-current="page"><span class="max_40_ch">{{ file['name'] }}</span></a></li>
+    </ul>
+  </nav>
 
   <hr/>
   <b>Affected genes:</b> {{ file_summary['genes'] }}<br/>

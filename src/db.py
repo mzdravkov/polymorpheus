@@ -269,7 +269,7 @@ def get_variants(sha, gene_hgnc, effects=None, impacts=None, biotypes=None, feat
 		if impacts:
 			query += __in_filter('impact', impacts)
 		if biotypes:
-			query += __in_filter('biotype', biotypes)
+			query += __in_filter('transcript_biotype', biotypes)
 		if feature_types:
 			query += __in_filter('feature_type', feature_types)
 

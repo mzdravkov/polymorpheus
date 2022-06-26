@@ -9,7 +9,14 @@
 </h3>
 
 <div class="box" style="min-height: 70vh">
-  <a class="button is-link mb-4" href="/files/{{ file['hash'] }}/gene/{{ gene_hgnc }}">⇦ Back to gene</a>
+  <nav class="breadcrumb" aria-label="breadcrumbs">
+    <ul>
+      <li><a href="/">Files</a></li>
+      <li><a href="/files/{{ file['hash'] }}"><span class="max_40_ch">{{ file['name'] }}</span></a></li>
+      <li><a href="/files/{{ file['hash'] }}/{{ gene_hgnc }}">{{ gene_hgnc }}</a></li>
+      <li class="is-active"><a href="#" aria-current="page">Variants</a></li>
+    </ul>
+  </nav>
 
   <hr/>
 
