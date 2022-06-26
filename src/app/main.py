@@ -182,9 +182,9 @@ def get_gene(sha, gene_hgnc):
         effects_summary=effects_summary)
 
 
-@main.route('/files/<sha>/<gene_hgnc>/variants')
-def get_gene_variants(sha, gene_hgnc):
-    file = db.get_file_by_sha(sha)
+@main.route('/files/<file_hash>/<gene_hgnc>/variants')
+def get_gene_variants(file_hash, gene_hgnc):
+    file = db.get_file_by_sha(file_hash)
     hgnc_info = get_hgnc_info(gene_hgnc)
 
     selected_biotypes = request.args.getlist('biotypes')
@@ -193,7 +193,7 @@ def get_gene_variants(sha, gene_hgnc):
     selected_feature_types = request.args.getlist('feature_types')
 
     variants_df = db.get_variants(
-        sha,
+        file_hash,
         gene_hgnc,
         biotypes=selected_biotypes,
         effects=selected_effects,
@@ -201,10 +201,10 @@ def get_gene_variants(sha, gene_hgnc):
         feature_types=selected_feature_types
     )
 
-    transcript_biotypes = analysis.get_transcript_biotypes(sha, gene_hgnc)
-    effects = analysis.get_effects(sha, gene_hgnc)
-    impacts = analysis.get_impacts(sha, gene_hgnc)
-    feature_types = analysis.get_feature_types(sha, gene_hgnc)
+    transcript_biotypes = analysis.get_transcript_biotypes(file_hash, gene_hgnc)
+    effects = analysis.get_effects(file_hash, gene_hgnc)
+    impacts = analysis.get_impacts(file_hash, gene_hgnc)
+    feature_types = analysis.get_feature_types(file_hash, gene_hgnc)
 
     chromosome = db.get_chromosome_for_gene(gene_hgnc)
     min_variant_pos = variants_df['start_pos'].min()
@@ -234,6 +234,20 @@ def get_gene_variants(sha, gene_hgnc):
         chromosome=chromosome,
         start_pos=start_pos,
         end_pos=end_pos)
+
+
+@main.route('/files/<file_hash>/<gene_hgnc>/variants/<variant_id>')
+def show_variant(file_hash, gene_hgnc, variant_id):
+    file = db.get_file_by_sha(file_hash)
+    variant = db.get_variant(file_hash, gene_hgnc, variant_id)
+    annotations = db.get_variant_annotations(file_hash, gene_hgnc, variant_id)
+
+    return render_template(
+        'variant.html',
+        file=file,
+        gene_hgnc=gene_hgnc,
+        variant=variant,
+        annotations=annotations)
 
 
 @main.route('/files/<sha>/<gene_hgnc>/vcf')

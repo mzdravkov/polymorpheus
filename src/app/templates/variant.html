@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1 class="title has-text-centered">
+  <b>Variant: {{ variant['chrom'] }}:{{ variant['start_pos'] }}-{{ variant['end_pos'] }}</b>
+</h1>
+<h3 class="subtitle has-text-centered">
+  {{ file['name'] }} / {{ gene_hgnc }}
+</h3>
+
+<div class="box" style="min-height: 70vh">
+  <nav class="breadcrumb" aria-label="breadcrumbs">
+    <ul>
+      <li><a href="/">Files</a></li>
+      <li><a href="/files/{{ file['hash'] }}"><span class="max_40_ch">{{ file['name'] }}</span></a></li>
+      <li><a href="/files/{{ file['hash'] }}/{{ gene_hgnc }}">{{ gene_hgnc }}</a></li>
+      <li><a href="/files/{{ file['hash'] }}/{{ gene_hgnc }}/variants">Variants</a></li>
+      <li class="is-active"><a href="#" aria-current="page">{{ variant['chrom'] }}:{{ variant['start_pos'] }}-{{ variant['end_pos'] }}</a></li>
+    </ul>
+  </nav>
+
+  <hr/>
+
+  <table id='variants_table' class="table is-bordered is-striped is-fullwidth is-hoverable">
+    <thead>
+      <tr>
+        <th class="is-vcentered has-text-centered">
+          Feature type
+        </th>
+        <th class="is-vcentered has-text-centered">
+          Feature
+        </th>
+        <th class="is-vcentered has-text-centered">
+          Transcript biotype
+        </th>
+        <th class="has-text-centered">
+          Effect
+        </th>
+        <th class="has-text-centered">
+          Impact
+        </th>
+        <th class="has-text-centered">
+          Protein HGVS
+        </th>
+        <th class="has-text-centered">
+          Actions
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for annotation in annotations %}
+        <tr>
+          <td>
+            {{ annotation['feature_type'] }}
+          </td>
+          <td>
+            <a href="https://ensembl.org/Homo_sapiens/Transcript/Summary?t={{ annotation['feature_id'] }}">{{ annotation['feature_id'] }}</a>
+          </td>
+          <td>
+            {{ annotation['transcript_biotype'] }}
+          </td>
+          <td>
+            {{ annotation['effect'] }}
+          </td>
+          <td>
+            {{ annotation['impact'] }}
+          </td>
+          <td>
+            {{ annotation['hgvs_protein'] }}
+          </td>
+          <td>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}
+
+{% block js %}
+<script>
+$(document).ready(function() {
+});
+</script>
+{% endblock %}

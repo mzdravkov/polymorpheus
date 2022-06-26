@@ -1,0 +1,7 @@
+
+.max_40_ch {
+    white-space: nowrap; 
+    width: 40ch; 
+    overflow: hidden;
+    text-overflow: ellipsis;
+}

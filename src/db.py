@@ -257,7 +257,7 @@ def get_variants(sha, gene_hgnc, effects=None, impacts=None, biotypes=None, feat
 		db = duckdb.connect(database=DATABASE, read_only=True)
 		variants_df = None
 		query = """
-		SELECT DISTINCT start_pos, end_pos, ref, a.alt, var_type, var_subtype
+		SELECT DISTINCT v.gene_variation, start_pos, end_pos, ref, a.alt, var_type, var_subtype
 		FROM variants v
 		JOIN annotations a ON v.file_hash = a.file_hash AND v.gene_hgnc = a.gene_hgnc AND v.gene_variation = a.gene_variation
 		WHERE v.file_hash = ?
@@ -361,6 +361,58 @@ def delete_gene_set_member(id):
 		db = duckdb.connect(database=DATABASE, read_only=False)
 		db.execute('DELETE FROM gene_set_members WHERE id = ?', (id,))
 		db.close()
+
+
+def get_variant(file_hash, gene_hgnc, variant_id):
+	with __lock.read:
+		db = duckdb.connect(database=DATABASE, read_only=True)
+		query = """
+		SELECT *
+		FROM variants
+		WHERE file_hash = ?
+		  AND gene_hgnc = ?
+		  AND gene_variation = ?
+		LIMIT 1
+		"""
+		variants = db.execute(query, (file_hash, gene_hgnc, variant_id)).fetch_df().to_dict('records')
+		variant = None
+		if variants:
+			variant = variants[0]
+			# convert 0-based index to 1-based and half-open interval, i.e [) to closed, i.e. []
+			variant['start_pos'] += 1
+		db.close()
+		return variant
+
+
+def get_variant_annotations(file_hash, gene_hgnc, variant_id):
+	with __lock.read:
+		db = duckdb.connect(database=DATABASE, read_only=True)
+		query = """
+		SELECT *
+		FROM annotations
+		WHERE file_hash = ?
+		  AND gene_hgnc = ?
+		  AND gene_variation = ?
+		"""
+		annotations = db.execute(query, (file_hash, gene_hgnc, variant_id)).fetch_df().to_dict('records')
+		db.close()
+		return annotations
+
+
+def get_transcripts_for_variant(file_hash, gene_hgnc, variation_id):
+	with __lock.read:
+		db = duckdb.connect(database=DATABASE, read_only=True)
+		query = """
+		SELECT feature_id
+		FROM annotations
+		WHERE file_hash = ?
+		  AND gene_hgnc = ?
+		  AND gene_variation = ?
+		  AND feature_type = 'transcript'
+		"""
+		genes = db.execute(query, (id,)).fetch_df().to_dict('records')
+		db.close()
+		return genes
 
 
 def read_query(query, params):

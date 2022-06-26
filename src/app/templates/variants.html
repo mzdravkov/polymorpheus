@@ -95,7 +95,7 @@
   <table id='variants_table' class="table is-bordered is-striped is-fullwidth is-hoverable">
     <thead>
       <tr>
-        <th>
+        <th class="is-vcentered has-text-centered">
           Start
         </th>
         <th class="is-vcentered has-text-centered">
@@ -141,6 +141,7 @@
           </td>
           <td>
             <button class="button is-small is-info is-light" onclick="focusBrowser('{{chromosome}}', {{ row['start_pos'] }}, {{ row['end_pos'] }})">Focus in browser</button>
+            <a href="/files/{{ file['hash'] }}/{{ gene_hgnc }}/variants/{{ row['gene_variation'] }}" class="button is-small is-info is-light">Details</button>
           </td>
         </tr>
       {% endfor %}
