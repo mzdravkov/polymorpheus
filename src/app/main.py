@@ -20,7 +20,10 @@ import analysis
 import utils
 from tasks import parse
 from external import get_hgnc_info
-from vcf_processing import validate_vcf, VCFParsingException
+from vcf_processing import VCFParsingException
+from vcf_processing import get_header_lines
+from vcf_processing import validate_vcf_version
+from vcf_processing import validate_and_get_genome_reference
 
 main = Blueprint('main', __name__)
 
@@ -99,7 +102,9 @@ def upload_vcf():
             return redirect(url_for('main.files'))
 
         try:
-            validate_vcf(path)
+            header = get_header_lines(path)
+            validate_vcf_version(header)
+            reference_genome = validate_and_get_genome_reference(header)
         except VCFParsingException as e:
             flash('Cannot process the VCF file: ' + str(e), category='danger')
             return redirect(url_for('main.files'))

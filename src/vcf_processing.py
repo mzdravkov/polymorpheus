@@ -17,7 +17,7 @@ from config import CONFIG
 import utils
 
 
-ACCEPTED_REFERENCE_GENOMES = ('GRCh38')
+ACCEPTED_REFERENCE_GENOMES = ('GRCh38', 'GRCh37', 'hg19', 'hg38')
 
 
 class VCF_COLUMNS(Enum):
@@ -251,12 +251,12 @@ def parse_vcf(file):
     return df, annotations_df
 
 
-def validate_vcf(file):
-    """
-    Validates that the VCF can be parsed correctly by the software. Checks:
-    - The VCF file format is >= v4.0.
-    - The reference genome used for the VCF is supported.
-    """
+def __get_matching_references(line, refs):
+    matches = lambda ref: re.search(ref, line, flags=re.IGNORECASE)
+    return filter(matches, refs)
+
+
+def get_header_lines(file):
     header_lines = []
 
     input_file = None
@@ -270,7 +270,11 @@ def validate_vcf(file):
             if not line.startswith('##'):
                 break
             header_lines.append(line)
-    
+
+    return header_lines
+
+
+def validate_vcf_version(header_lines):
     fileformat_line = next((l for l in header_lines if l.startswith('##fileformat')), None)
 
     if not fileformat_line:
@@ -288,12 +292,17 @@ def validate_vcf(file):
     else:
         raise VCFParsingException("Cannot parse ##fileformat header")
 
-    reference_line = next((l for l in header_lines if l.startswith('##fileformat')), None)
+
+def validate_and_get_genome_reference(header_lines):
+    reference_line = next((l for l in header_lines if l.startswith('##reference')), None)
 
     if not reference_line:
         raise VCFParsingException("Cannot find reference header.")
 
-    if not any(re.search(ref, reference_line, flags=re.IGNORECASE) for ref in ACCEPTED_REFERENCE_GENOMES):
+    ref_matches = __get_matching_references(reference_line, ACCEPTED_REFERENCE_GENOMES)
+    try:
+        return next(ref_matches)
+    except StopIteration:
         raise VCFParsingException("Unsupported genome reference version. Should be one of {}".format(ACCEPTED_REFERENCE_GENOMES))
 
 
