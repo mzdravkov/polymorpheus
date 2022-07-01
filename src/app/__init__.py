@@ -25,4 +25,8 @@ def create_app():
             return chrom
         return 'chr' + chrom
 
+    @app.template_filter()
+    def chunkstring(string, length):
+        return (string[i:length+i] for i in range(0, len(string), length))
+
     return app

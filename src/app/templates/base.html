@@ -30,7 +30,7 @@
     </div>
 
     <div class="hero-body">
-        <div class="container">
+        <div class="container" style="max-width: 85vw;">
             {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}
                     {% for category, message in messages %}

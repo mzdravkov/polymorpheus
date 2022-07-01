@@ -7,3 +7,4 @@ rwmutex
 Babel
 requests
 pysam
+hgvs

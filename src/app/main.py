@@ -18,8 +18,10 @@ import pandas as pd
 import db
 import analysis
 import utils
+import proteins
 from tasks import parse
 from external import get_hgnc_info
+from external import get_protein_from_transcript_id
 from vcf_processing import VCFParsingException
 from vcf_processing import get_header_lines
 from vcf_processing import validate_vcf_version
@@ -248,6 +250,26 @@ def show_variant(file_hash, gene_hgnc, variant_id):
         gene_hgnc=gene_hgnc,
         variant=variant,
         annotations=annotations)
+
+
+@main.route('/files/<file_hash>/<gene_hgnc>/variants/<variant_id>/effects/<annotation_id>')
+def show_effect(file_hash, gene_hgnc, variant_id, annotation_id):
+    file = db.get_file_by_sha(file_hash)
+    variant = db.get_variant(file_hash, gene_hgnc, variant_id)
+    annotation = db.get_variant_annotation(file_hash, gene_hgnc, variant_id, annotation_id)
+    transcript_id = annotation['feature_id'][0:15]
+    ref_protein = get_protein_from_transcript_id(transcript_id)
+    hgvs = annotation['hgvs_protein']
+    alt_protein = proteins.get_protein_variant(ref_protein, hgvs)
+
+    return render_template(
+        'effect.html',
+        file=file,
+        gene_hgnc=gene_hgnc,
+        variant=variant,
+        annotation=annotation,
+        reference_protein=ref_protein,
+        alternative_protein=alt_protein)
 
 
 @main.route('/files/<sha>/<gene_hgnc>/vcf')

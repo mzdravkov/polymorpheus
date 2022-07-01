@@ -54,7 +54,8 @@
             {{ annotation['feature_type'] }}
           </td>
           <td>
-            <a href="https://ensembl.org/Homo_sapiens/Transcript/Summary?t={{ annotation['feature_id'] }}">{{ annotation['feature_id'] }}</a>
+            <a href="/files/{{ file['hash'] }}/{{ gene_hgnc }}/variants/{{ variant['gene_variation'] }}/effects/{{ annotation['variation_annotation'] }}">{{ annotation['feature_id'] }}</a>
+            <!-- <a href="https://ensembl.org/Homo_sapiens/Transcript/Summary?t={{ annotation['feature_id'] }}">Ensembl</a> -->
           </td>
           <td>
             {{ annotation['transcript_biotype'] }}

@@ -46,3 +46,4 @@ def parse(vcf_file, genes_file):
             save_gene_data(vcf_sha, gene, variants, annotations)
             pysam.tabix_index(gene_vcf, preset='vcf', force=True)
         update_file_status(vcf_sha, 'processed')
+    print('Processed ' + vcf_file)

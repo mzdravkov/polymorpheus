@@ -5,3 +5,24 @@
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
+.protein-sequence-view {
+    counter-reset: sequence;
+}
+
+.protein-sequence-chunk {
+    display: inline-block;
+    position: relative;
+    font-family: monospace;
+    margin-right: 2em;
+    margin-top: 1.3em;
+}
+
+.protein-sequence-view .protein-sequence-chunk:not(:last-child)::before, .protein-sequence-view .protein-sequence-chunk::before {
+    content: counter(sequence);
+    counter-increment: sequence 10;
+    position: absolute;
+    top: -1.1em;
+    right: 0;
+    opacity: 0.5;
+}

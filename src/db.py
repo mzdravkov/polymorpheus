@@ -399,6 +399,24 @@ def get_variant_annotations(file_hash, gene_hgnc, variant_id):
 		return annotations
 
 
+def get_variant_annotation(file_hash, gene_hgnc, variant_id, annotation_id):
+	with __lock.read:
+		db = duckdb.connect(database=DATABASE, read_only=True)
+		query = """
+		SELECT *
+		FROM annotations
+		WHERE file_hash = ?
+		  AND gene_hgnc = ?
+		  AND gene_variation = ?
+		  AND variation_annotation = ?
+		LIMIT 1
+		"""
+		annotations = db.execute(query, (file_hash, gene_hgnc, variant_id, annotation_id)).fetch_df().to_dict('records')
+		annotation = annotations[0] if annotations else None
+		db.close()
+		return annotation
+
+
 def get_transcripts_for_variant(file_hash, gene_hgnc, variation_id):
 	with __lock.read:
 		db = duckdb.connect(database=DATABASE, read_only=True)

@@ -1,1 +1,3 @@
 http://www.athanasiadis.info/assets/pdf/bdcat2017.pdf - Benefits of using parquet for VCF files
+https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3679285/ - A program for annotating and predicting the effects of single nucleotide polymorphisms, SnpEff
+https://onlinelibrary.wiley.com/doi/pdf/10.1002/humu.23615 - hgvs:A Python package for manipulating sequence variants using HGVS nomenclature.
