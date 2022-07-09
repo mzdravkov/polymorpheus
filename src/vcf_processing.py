@@ -306,5 +306,22 @@ def validate_and_get_genome_reference(header_lines):
         raise VCFParsingException("Unsupported genome reference version. Should be one of {}".format(ACCEPTED_REFERENCE_GENOMES))
 
 
+def get_filtered_vcf_name(file_name):
+    filtered = file_name.removesuffix('.vcf')
+    return filtered + '_filtered.vcf'
+
+
+def create_filtered_vcf_file(vcf_file):
+    filtered_vcf_name = get_filtered_vcf_name(vcf_file)
+    filtered_vcf = open(filtered_vcf_name, 'w')
+
+    with open(vcf_file, 'r') as vcf:
+        for line in vcf:
+            if line.startswith('#') or re.search(r"HIGH|MODERATE|LOW", line):
+                filtered_vcf.write(line)
+
+    return filtered_vcf_name
+
+
 # create_annotated_vcf_files_for_genes("/home/me/ALL.chrX.shapeit2_integrated_snvindels_v2a_27022019.GRCh38.phased.vcf", "GRCh38.105", "/home/me/Downloads/snpEff/test_gene_names.csv")
 # print(parse_vcf('data/intermediary/ALL.chrX.shapeit2_integrated_snvindels_v2a_27022019.GRCh38.phased.vcf/IL9R.vcf'))

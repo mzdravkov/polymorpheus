@@ -280,7 +280,13 @@ def show_effect(file_hash, gene_hgnc, variant_id, annotation_id):
 def get_gene_vcf(sha, gene_hgnc):
     file = db.get_file_by_sha(sha)
     directory = os.path.join(main.root_path, '..', '..', 'data', 'intermediary', file['name'])
-    file_name = gene_hgnc + '.vcf.gz'
+
+    include_modifiers = request.args.get('include_modifiers', default=False, type=bool)
+
+    file_name = gene_hgnc + '_filtered.vcf.gz'
+    if include_modifiers:
+        file_name = gene_hgnc + '.vcf.gz'
+
     return send_from_directory(directory, file_name, as_attachment=True, attachment_filename=file_name)
 
 
@@ -288,7 +294,13 @@ def get_gene_vcf(sha, gene_hgnc):
 def get_gene_index(sha, gene_hgnc):
     file = db.get_file_by_sha(sha)
     directory = os.path.join(main.root_path, '..', '..', 'data', 'intermediary', file['name'])
-    file_name = gene_hgnc + '.vcf.gz.tbi'
+
+    include_modifiers = request.args.get('include_modifiers', default=False, type=bool)
+
+    file_name = gene_hgnc + '_filtered.vcf.gz.tbi'
+    if include_modifiers:
+        file_name = gene_hgnc + '.vcf.gz.tbi'
+
     return send_from_directory(directory, file_name, as_attachment=True, attachment_filename=file_name)
 
 

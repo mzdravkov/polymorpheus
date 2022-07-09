@@ -74,7 +74,7 @@ def file_summary(file_hash):
     query = """
     SELECT 
         COUNT(DISTINCT gene_hgnc) AS genes,
-        COUNT(DISTINCT gene_variation) AS variations,
+        COUNT(DISTINCT {g: gene_hgnc, v: gene_variation}) AS variations,
         COUNT(*) AS effects
     FROM annotations
     WHERE file_hash = ?

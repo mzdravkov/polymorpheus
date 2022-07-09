@@ -6,6 +6,7 @@ from vcf_processing import parse_vcf
 from vcf_processing import get_header_lines
 from vcf_processing import validate_vcf_version
 from vcf_processing import validate_and_get_genome_reference
+from vcf_processing import create_filtered_vcf_file
 
 from db import get_file_by_sha, save_file, save_gene_data, update_file_status
 from utils import sha256sum, get_data_dir
@@ -42,8 +43,15 @@ def parse(vcf_file, genes_file):
         print('Parsing the data and saving it to the database')
         for gene in gene_to_vcf:
             gene_vcf = gene_to_vcf[gene].name
+
+            filtered_vcf = create_filtered_vcf_file(gene_vcf)
+
             variants, annotations = parse_vcf(gene_vcf)
             save_gene_data(vcf_sha, gene, variants, annotations)
+
+            # create a tabix index for the vcf and filtered vcf
+            # and compress them with gzip
             pysam.tabix_index(gene_vcf, preset='vcf', force=True)
+            pysam.tabix_index(filtered_vcf, preset='vcf', force=True)
         update_file_status(vcf_sha, 'processed')
     print('Processed ' + vcf_file)

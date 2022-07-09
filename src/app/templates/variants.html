@@ -22,6 +22,11 @@
 
   <div id="browser_div" class="mt-2"></div>
 
+  <label class="checkbox">
+    <input id="include_modifiers" type="checkbox">
+    Show variants with no impact
+  </label>
+
   <h3 class="title has-text-centered mt-6">Variants</h3>
 
   <h3 class="subtitle is-3">Filters</h3>
@@ -163,30 +168,46 @@ function focusBrowser(chrom, start, end) {
 }
 
 $(document).ready(function() {
-    $('#variants_table').DataTable({
-      paging: true,
-      pageLength: 100,
-    });
+  $('#variants_table').DataTable({
+    paging: true,
+    pageLength: 100,
+  });
 
-    $('#biotypes_select').chosen();
-    $('#impacts_select').chosen();
-    $('#effects_select').chosen();
-    $('#feature_types_select').chosen();
+  $('#biotypes_select').chosen();
+  $('#impacts_select').chosen();
+  $('#effects_select').chosen();
+  $('#feature_types_select').chosen();
+
+  var includeModifiers = $(this).is(':checked');
 
   var igvDiv = document.getElementById("browser_div");
+
+  $('#include_modifiers').change(function() {
+    includeModifiers = !includeModifiers;
+    let trackConfig = igvBrowser.findTracks('name', 'Variants')[0].config;
+    igvBrowser.removeTrackByName('Variants');
+    trackConfig.url = "{{ url_for('main.get_gene_vcf', sha=file['hash'], gene_hgnc=gene_hgnc, _external=True) }}";
+    trackConfig.indexURL = "{{ url_for('main.get_gene_index', sha=file['hash'], gene_hgnc=gene_hgnc, _external=True) }}";
+    if (includeModifiers) {
+      trackConfig.url += "?include_modifiers=true";
+      trackConfig.indexURL += "?include_modifiers=true";
+    }
+    igvBrowser.loadTrack(trackConfig);
+  });
+
   var options =
   {
     genome: "hg38",
     locus: "{{ chromosome|normalize_chromosome }}:{{ start_pos }}-{{ end_pos }}",
-    "showAllChromosomes": false,
-    "showChromosomeWidget": false,
+    showAllChromosomes: false,
+    showChromosomeWidget: false,
     tracks: [
       {
-        "name": "Variants",
-        "url": "{{ url_for('main.get_gene_vcf', sha=file['hash'], gene_hgnc=gene_hgnc, _external=True) }}",
-        "indexURL": "{{ url_for('main.get_gene_index', sha=file['hash'], gene_hgnc=gene_hgnc, _external=True) }}",
-        "format": "vcf",
-        "displayMode": "EXPANDED",
+        name: "Variants",
+        url: "{{ url_for('main.get_gene_vcf', sha=file['hash'], gene_hgnc=gene_hgnc, _external=True) }}",
+        indexURL: "{{ url_for('main.get_gene_index', sha=file['hash'], gene_hgnc=gene_hgnc, _external=True) }}",
+        format: "vcf",
+        displayMode: "EXPANDED",
         color: function (variant) {
           switch (variant.type) {
               case 'SNP':
