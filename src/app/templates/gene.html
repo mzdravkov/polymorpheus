@@ -40,6 +40,28 @@
       <a class="button is-link is-pulled-right" href="/files/{{ file['hash'] }}/{{ gene_hgnc }}/variants">List variants</a>
     </div>
   </div>
+
+  {% if hgnc_info['uniprot_ids']|length > 0 %}
+    <div class="block">
+      <h3 class="subtitle is-3">Protein annotation ({{ hgnc_info['uniprot_ids'][0] }})</h3>
+
+      {% for category, annotations in protein_annotation.items() %}
+        <div class="block">
+          <h5 class="subtitle is-5">{{ category | snakecase_to_title}}</h5>
+          <ul>
+            {% for annotation in annotations %}
+              <li>
+                {{ annotation.description }}
+                {% if annotation.cvTermAccessionCode %}
+                  <a class="ml-1" href="https://www.ebi.ac.uk/QuickGO/term/{{ annotation.cvTermAccessionCode }}">{{ annotation.cvTermAccessionCode }}</a>
+                {% endif %}
+                <span class="tag ml-1 {% if annotation.qualityQualifier == 'GOLD' %} is-warning {% endif %}">{{ annotation.qualityQualifier }}</span></li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
   
   <h3 class="subtitle is-3">Filters</h3>
   <form class="form" method="GET">
@@ -83,10 +105,10 @@
             {{ row['order'] }}
           </td>
           <td>
-            <a href="/files/{{ file['hash'] }}/{{ gene_hgnc }}/variants?impact={{ row['impact'] }}">{{ row['impact'] }}</a>
+            <a href="/files/{{ file['hash'] }}/{{ gene_hgnc }}/variants?impacts={{ row['impact'] }}">{{ row['impact'] }}</a>
           </td>
           <td>
-            <a href="/files/{{ file['hash'] }}/{{ gene_hgnc }}/variants?effect={{ row['effect'] }}">{{ row['effect'] }}</a>
+            <a href="/files/{{ file['hash'] }}/{{ gene_hgnc }}/variants?effects={{ row['effect'] }}">{{ row['effect'] }}</a>
           </td>
           <td>
             {{ row['count']|int }}

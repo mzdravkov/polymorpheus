@@ -15,8 +15,8 @@
 
   <hr/>
   <b>Affected genes:</b> {{ file_summary['genes'] }}<br/>
-  <b>Variations:</b> {{ file_summary['variations'] }}<br/>
-  <b>Effects:</b> {{ file_summary['effects'] }}<br/>
+  <b>Variants:</b> {{ file_summary['variations'] }}<br/>
+  <b>Annotations:</b> {{ file_summary['effects'] }}<br/>
 
   <h3 class="subtitle is-3 mt-5">Filters</h3>
   <form class="form" method="GET">
@@ -35,7 +35,7 @@
     <button type="submit" class="button is-link">Filter</button>
   </form>
 
-  <h3 class="title has-text-centered">Effects by impact</h3>
+  <h3 class="title has-text-centered">Annotations by impact</h3>
   <table id='impact-table' class="table is-bordered is-striped is-fullwidth is-hoverable">
     <thead>
       <tr>

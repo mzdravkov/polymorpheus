@@ -29,4 +29,8 @@ def create_app():
     def chunkstring(string, length):
         return (string[i:length+i] for i in range(0, len(string), length))
 
+    @app.template_filter()
+    def snakecase_to_title(string):
+        return string.replace('-', ' ').upper()
+
     return app

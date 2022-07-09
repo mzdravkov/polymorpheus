@@ -21,7 +21,8 @@ import utils
 import proteins
 from tasks import parse
 from external import get_hgnc_info
-from external import get_protein_from_transcript_id
+from external import get_protein_seq_from_transcript_id
+from external import get_protein_annotation_from_nextprot
 from vcf_processing import VCFParsingException
 from vcf_processing import get_header_lines
 from vcf_processing import validate_vcf_version
@@ -173,6 +174,8 @@ def get_gene(sha, gene_hgnc):
 
     transcript_biotypes = analysis.get_transcript_biotypes(sha, gene_hgnc)
 
+    protein_annotation = get_protein_annotation_from_nextprot(hgnc_info['uniprot_ids'][0])
+
     return render_template(
         'gene.html',
         file=file,
@@ -181,7 +184,8 @@ def get_gene(sha, gene_hgnc):
         chromosome=chromosome,
         transcript_biotypes=transcript_biotypes,
         selected_biotypes=selected_biotypes,
-        effects_summary=effects_summary)
+        effects_summary=effects_summary,
+        protein_annotation=protein_annotation)
 
 
 @main.route('/files/<file_hash>/<gene_hgnc>/variants')
@@ -258,7 +262,7 @@ def show_effect(file_hash, gene_hgnc, variant_id, annotation_id):
     variant = db.get_variant(file_hash, gene_hgnc, variant_id)
     annotation = db.get_variant_annotation(file_hash, gene_hgnc, variant_id, annotation_id)
     transcript_id = annotation['feature_id'][0:15]
-    ref_protein = get_protein_from_transcript_id(transcript_id)
+    ref_protein = get_protein_seq_from_transcript_id(transcript_id)
     hgvs = annotation['hgvs_protein']
     alt_protein = proteins.get_protein_variant(ref_protein, hgvs)
 
