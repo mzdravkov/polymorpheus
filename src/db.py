@@ -22,6 +22,7 @@ with __lock.write:
 		hash VARCHAR(40) PRIMARY KEY, 
 		name VARCHAR(1000) NOT NULL,
 		path VARCHAR(1000) NOT NULL,
+		genome_ref VARCHAR(64) NOT NULL,
 		created_at TIMESTAMP NOT NULL,
 		status VARCHAR(32) NOT NULL
 	);
@@ -215,12 +216,12 @@ def get_file_by_sha(sha):
 		return file
 
 
-def save_file(filename, sha, path, created_at, status='unprocessed'):
+def save_file(filename, sha, path, genome_ref, created_at, status='unprocessed'):
 	with __lock.write:
 		db = duckdb.connect(database=DATABASE, read_only=False)
 		db.execute(
-			'INSERT INTO files (hash, name, path, created_at, status) VALUES (?, ?, ?, ?, ?)',
-			(sha, filename, path, created_at, status))
+			'INSERT INTO files (hash, name, path, genome_ref, created_at, status) VALUES (?, ?, ?, ?, ?, ?)',
+			(sha, filename, path, genome_ref, created_at, status))
 		db.close()
 
 

@@ -197,7 +197,7 @@ $(document).ready(function() {
 
   var options =
   {
-    genome: "hg38",
+    genome: "hg38", // TODO: handle other reference genomes
     locus: "{{ chromosome|normalize_chromosome }}:{{ start_pos }}-{{ end_pos }}",
     showAllChromosomes: false,
     showChromosomeWidget: false,
@@ -218,7 +218,28 @@ $(document).ready(function() {
                   return "#2b2b2b";
           }
         }
-      }
+      },
+      {
+        name: "Transcripts (Gencode40)",
+        type: "annotation",
+        format: "gtf",
+        displayMode: "expanded",
+        height: 240,
+        url: "{{ url_for('main.get_gencode40') }}",
+        indexURL: "{{ url_for('main.get_gencode40_index') }}",
+        visibilityWindow: 1000000,
+        nameField: "transcript_id",
+        colorBy: "biotype",
+        colorTable: {
+          "antisense": "blueviolet",
+          "protein_coding": "blue",
+          "retained_intron": "rgb(0, 150, 150)",
+          "processed_transcript": "purple",
+          "processed_pseudogene": "#7fff00",
+          "unprocessed_pseudogene": "#d2691e",
+          "*": "black"
+        }
+      },
     ]
   };
 

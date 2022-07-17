@@ -56,11 +56,6 @@ def is_vcf(filename):
     return allowed_file(filename, VCF_EXTENSIONS)
 
 
-def file_upload_validation(fn):
-
-    return fn()
-
-
 def validate_file_upload(fn):
   @functools.wraps(fn)
   def decorated_function(*args, **kwargs):
@@ -112,7 +107,7 @@ def upload_vcf():
             flash('Cannot process the VCF file: ' + str(e), category='danger')
             return redirect(url_for('main.files'))
 
-        db.save_file(filename, vcf_sha, path, datetime.now())
+        db.save_file(filename, vcf_sha, path, reference_genome, datetime.now())
 
         gene_set_id = request.form['gene_set']
         genes = db.get_genes_for_gene_set(gene_set_id)
@@ -371,3 +366,17 @@ def delete_gene_set_member(gene_set_id, member_id):
     db.delete_gene_set_member(member_id)
     flash('The gene was removed from the gene set.', category='success')
     return redirect(url_for('main.show_gene_set', id=gene_set_id))
+
+
+@main.route('/gencode40')
+def get_gencode40():
+    file_name = 'gencode.v40.annotation.sorted.gtf.gz'
+    directory = os.path.join(main.root_path, '..', '..', 'data')
+    return send_from_directory(directory, file_name, as_attachment=True, attachment_filename=file_name)
+
+
+@main.route('/gencode40_index')
+def get_gencode40_index():
+    file_name = 'gencode.v40.annotation.sorted.gtf.gz.tbi'
+    directory = os.path.join(main.root_path, '..', '..', 'data')
+    return send_from_directory(directory, file_name, as_attachment=True, attachment_filename=file_name)

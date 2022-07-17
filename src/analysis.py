@@ -78,6 +78,7 @@ def file_summary(file_hash):
         COUNT(*) AS effects
     FROM annotations
     WHERE file_hash = ?
+      AND effect NOT IN ('intergenic_region')
     """
     return db.read_query(query, (file_hash,))
 

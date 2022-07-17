@@ -36,7 +36,12 @@ def parse(vcf_file, genes_file):
 
         if not existing_row:
             print('Saving file hash')
-            save_file(os.path.basename(vcf_file), vcf_sha, vcf_file, datetime.now())
+            save_file(
+                os.path.basename(vcf_file),
+                vcf_sha,
+                vcf_file,
+                genome_reference,
+                datetime.now())
 
         print('Annotating the VCF')
         gene_to_vcf = create_annotated_vcf_files_for_genes(vcf_file, snpeff_ref, genes_file)
