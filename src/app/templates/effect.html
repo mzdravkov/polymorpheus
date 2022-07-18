@@ -1,11 +1,14 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1 class="title has-text-centered">
-  <b>{{ annotation['effect'] }} in {{ annotation['feature_id'] }}</b><br/>
-  <b>Variant: {{ variant['chrom'] }}:{{ variant['start_pos'] }}-{{ variant['end_pos'] }}</b>
-</h1>
-<h3 class="subtitle has-text-centered">
+<h3 class="title has-text-centered is-4">
+  <b>{{ annotation['effect'] }} in {{ annotation['feature_id'] }}</b>
+</h3>
+<h3 class="subtitle has-text-centered is-5">
+  <b>Variant: {{ variant['chrom'] }}:{{ variant['start_pos'] }}-{{ variant['end_pos'] }}</b><br/>
+  <b>HGVS</b>: {{ annotation['hgvs_protein'] }}
+</h3>
+<h3 class="subtitle has-text-centered is-5">
   {{ file['name'] }} / {{ gene_hgnc }}
 </h3>
 
@@ -55,6 +58,23 @@
 {% block js %}
 <script>
 $(document).ready(function() {
+  let chunkSize = 10;
+  let refProteinView = $('.protein-sequence-view')[0];
+  let start = {{ protein_change_range[0] }};
+  let end = {{ protein_change_range[1] }};
+  let startChunkIndex = Math.floor(start / chunkSize);
+  let endChunkIndex = Math.floor(end / chunkSize);
+  for (var i = startChunkIndex; i <= endChunkIndex; i++) {
+    let chunk = refProteinView.children[i];
+    let startChar = start - chunkSize * i;
+    let endChar = end - chunkSize * i;
+    let content = chunk.textContent;
+    $(chunk).empty();
+    $(chunk).append(content.substr(0, startChar));
+    $(chunk).append("<b style=\"color: red\">" + content.substr(startChar, endChar - startChar + 1) + "</b>");
+    $(chunk).append(content.substr(endChar + 1, chunkSize - endChar + 1));
+  }
+  
 });
 </script>
 {% endblock %}

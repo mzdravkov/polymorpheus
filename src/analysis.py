@@ -57,6 +57,7 @@ def impact_summary(file_hash):
     SELECT
     chrom,
     v.gene_hgnc,
+    COUNT(DISTINCT v.gene_variation) AS variants,
     SUM(CASE impact WHEN 'HIGH' THEN 1 ELSE 0 END) AS high_impact, 
     SUM(CASE impact WHEN 'MODERATE' THEN 1 ELSE 0 END) AS moderate_impact, 
     SUM(CASE impact WHEN 'LOW' THEN 1 ELSE 0 END) AS low_impact, 

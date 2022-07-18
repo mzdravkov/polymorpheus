@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1 class="title has-text-centered">
+<h2 class="title has-text-centered is-4">
   {{ file['name'] }}
-</h1>
+</h2>
 
 <div class="box" style="min-height: 70vh">
   <nav class="breadcrumb" aria-label="breadcrumbs">
@@ -15,6 +15,7 @@
 
   <hr/>
   <b>Reference genome:</b> {{ file['genome_ref'] }}<br/>
+  <b>Gene set:</b> <a href="/gene_sets/{{ file['gene_set_id'] }}">{{ gene_set['name'] }}</a><br/>
   <b>Affected genes:</b> {{ file_summary['genes'] }}<br/>
   <b>Variants:</b> {{ file_summary['variations'] }}<br/>
   <b>Annotations:</b> {{ file_summary['effects'] }}<br/>
@@ -36,7 +37,7 @@
     <button type="submit" class="button is-link">Filter</button>
   </form>
 
-  <h3 class="title has-text-centered">Annotations by impact</h3>
+  <h4 class="title has-text-centered is-4">Breakdown by gene</h4>
   <table id='impact-table' class="table is-bordered is-striped is-fullwidth is-hoverable">
     <thead>
       <tr>
@@ -44,10 +45,13 @@
           Chromosome
         </th>
         <th rowspan="2" class="is-vcentered has-text-centered">
-          Gene       
+          Gene
+        </th>
+        <th rowspan="2" class="is-vcentered has-text-centered">
+          Variants
         </th>
         <th colspan="4" class="has-text-centered">
-          Impact
+          Annotations by impact
         </th>
       </tr>
       <tr>
@@ -73,6 +77,9 @@
           </td>
           <td>
             <a href="/files/{{ file['hash'] }}/gene/{{ row['gene_hgnc'] }}">{{ row['gene_hgnc'] }}</a>
+          </td>
+          <td>
+            {{ row['variants']|int }}
           </td>
           <td>
             {{ row['high_impact']|int }}

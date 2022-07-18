@@ -107,13 +107,14 @@ def upload_vcf():
             flash('Cannot process the VCF file: ' + str(e), category='danger')
             return redirect(url_for('main.files'))
 
-        db.save_file(filename, vcf_sha, path, reference_genome, datetime.now())
-
         gene_set_id = request.form['gene_set']
+
+        db.save_file(filename, vcf_sha, path, reference_genome, gene_set_id, datetime.now())
+
         genes = db.get_genes_for_gene_set(gene_set_id)
         utils.save_genes_to_file(genes, GENES_FILE)
 
-        th = threading.Thread(target=lambda: parse(path, GENES_FILE))
+        th = threading.Thread(target=lambda: parse(path, GENES_FILE, gene_set_id))
         th.start()
         flash('File uploaded. Will start processing it in the background now. This may take a couple of minutes depending on the size of the file.', category='success')
         return redirect(url_for('main.files'))
@@ -123,6 +124,7 @@ def upload_vcf():
 def file_summary(sha):
     selected_chromosomes = request.args.getlist('chromosomes')
     file = db.get_file_by_sha(sha)
+    gene_set = db.get_gene_set_by_id(file['gene_set_id'])
     file_summary = analysis.file_summary(sha).to_dict('records')[0]
     impact_summary = analysis.impact_summary(sha).to_dict('records')
     chromosomes = list({row['chrom']: None for row in impact_summary})
@@ -133,6 +135,7 @@ def file_summary(sha):
     return render_template(
         'file.html',
         file=file,
+        gene_set=gene_set,
         file_summary=file_summary,
         impact_summary=impact_summary,
         chromosomes=chromosomes,
@@ -260,6 +263,7 @@ def show_effect(file_hash, gene_hgnc, variant_id, annotation_id):
     ref_protein = get_protein_seq_from_transcript_id(transcript_id)
     hgvs = annotation['hgvs_protein']
     alt_protein = proteins.get_protein_variant(ref_protein, hgvs)
+    protein_change_range = proteins.get_range_from_hgvs(hgvs)
 
     return render_template(
         'effect.html',
@@ -268,7 +272,8 @@ def show_effect(file_hash, gene_hgnc, variant_id, annotation_id):
         variant=variant,
         annotation=annotation,
         reference_protein=ref_protein,
-        alternative_protein=alt_protein)
+        alternative_protein=alt_protein,
+        protein_change_range=protein_change_range)
 
 
 @main.route('/files/<sha>/<gene_hgnc>/vcf')

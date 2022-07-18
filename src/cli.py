@@ -22,7 +22,8 @@ if len(sys.argv) == 1:
 args = parser.parse_args()
 
 if args.subcommand == 'parse':
-    tasks.parse(args.vcf_file, args.genes_file)
+    # TODO: save and pass gene set properly
+    tasks.parse(args.vcf_file, args.genes_file, -1)
 else:
     print('no can do')
     exit(1)

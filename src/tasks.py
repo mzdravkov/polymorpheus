@@ -20,7 +20,7 @@ def __get_snpeff_genome_reference(genome_reference):
     return genome_reference
 
 
-def parse(vcf_file, genes_file):
+def parse(vcf_file, genes_file, gene_set_id):
     vcf_sha = sha256sum(vcf_file)
 
     existing_row = get_file_by_sha(vcf_sha)
@@ -41,6 +41,7 @@ def parse(vcf_file, genes_file):
                 vcf_sha,
                 vcf_file,
                 genome_reference,
+                gene_set_id,
                 datetime.now())
 
         print('Annotating the VCF')

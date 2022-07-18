@@ -16,15 +16,37 @@ DATABASE = 'db.duckdb'
 
 with __lock.write:
 	db = duckdb.connect(database=DATABASE, read_only=False)
+	# TODO: files.gene_set_id should be part of the primary key
 	db.execute(
 	"""
+	CREATE SEQUENCE IF NOT EXISTS gene_sets_id_seq START 1;
+
+	CREATE TABLE IF NOT EXISTS gene_sets (
+		id UINTEGER PRIMARY KEY,
+		name VARCHAR(1000) NOT NULL,
+		description VARCHAR(1000) NOT NULL,
+		created_at TIMESTAMP NOT NULL
+	);
+
+	CREATE SEQUENCE IF NOT EXISTS gene_set_members_id_seq START 1;
+
+	CREATE TABLE IF NOT EXISTS gene_set_members (
+		id UINTEGER PRIMARY KEY,
+		gene_set_id UINTEGER NOT NULL,
+		name VARCHAR(1000) NOT NULL,
+
+		FOREIGN KEY(gene_set_id) REFERENCES gene_sets(id)
+	);
 	CREATE TABLE IF NOT EXISTS files (
 		hash VARCHAR(40) PRIMARY KEY, 
 		name VARCHAR(1000) NOT NULL,
 		path VARCHAR(1000) NOT NULL,
 		genome_ref VARCHAR(64) NOT NULL,
 		created_at TIMESTAMP NOT NULL,
-		status VARCHAR(32) NOT NULL
+		status VARCHAR(32) NOT NULL,
+		gene_set_id UINTEGER NOT NULL,
+
+		FOREIGN KEY(gene_set_id) REFERENCES gene_sets(id)
 	);
 
 	CREATE TABLE IF NOT EXISTS tasks (
@@ -98,25 +120,6 @@ with __lock.write:
 
 		PRIMARY KEY (file_hash, gene_hgnc, gene_variation, variation_annotation),
 		FOREIGN KEY(file_hash, gene_hgnc, gene_variation) REFERENCES variants(file_hash, gene_hgnc, gene_variation),
-	);
-
-	CREATE SEQUENCE IF NOT EXISTS gene_sets_id_seq START 1;
-
-	CREATE TABLE IF NOT EXISTS gene_sets (
-		id UINTEGER PRIMARY KEY,
-		name VARCHAR(1000) NOT NULL,
-		description VARCHAR(1000) NOT NULL,
-		created_at TIMESTAMP NOT NULL
-	);
-
-	CREATE SEQUENCE IF NOT EXISTS gene_set_members_id_seq START 1;
-
-	CREATE TABLE IF NOT EXISTS gene_set_members (
-		id UINTEGER PRIMARY KEY,
-		gene_set_id UINTEGER NOT NULL,
-		name VARCHAR(1000) NOT NULL,
-
-		FOREIGN KEY(gene_set_id) REFERENCES gene_sets(id)
 	);
 	"""
 	)
@@ -216,12 +219,12 @@ def get_file_by_sha(sha):
 		return file
 
 
-def save_file(filename, sha, path, genome_ref, created_at, status='unprocessed'):
+def save_file(filename, sha, path, genome_ref, gene_set_id, created_at, status='unprocessed'):
 	with __lock.write:
 		db = duckdb.connect(database=DATABASE, read_only=False)
 		db.execute(
-			'INSERT INTO files (hash, name, path, genome_ref, created_at, status) VALUES (?, ?, ?, ?, ?, ?)',
-			(sha, filename, path, genome_ref, created_at, status))
+			'INSERT INTO files (hash, name, path, genome_ref, created_at, status, gene_set_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
+			(sha, filename, path, genome_ref, created_at, status, gene_set_id))
 		db.close()
 
 

@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1 class="title has-text-centered">
+<h2 class="title has-text-centered is-4">
   <b>{{ hgnc_info['name'] }} ({{ gene_hgnc }})
-</h1>
+</h2>
 <h3 class="subtitle has-text-centered">
   {{ file['name'] }}
 </h3>
@@ -13,7 +13,7 @@
     <ul>
       <li><a href="/">Files</a></li>
       <li><a href="/files/{{ file['hash'] }}"><span class="max_40_ch">{{ file['name'] }}</span></a></li>
-      <li><a href="/files/{{ file['hash'] }}/{{ gene_hgnc }}">{{ gene_hgnc }}</a></li>
+      <li><a href="/files/{{ file['hash'] }}/gene/{{ gene_hgnc }}">{{ gene_hgnc }}</a></li>
       <li class="is-active"><a href="#" aria-current="page">Variants</a></li>
     </ul>
   </nav>
