@@ -25,6 +25,7 @@
       <b>Ensembl:</b> <a href="http://www.ensembl.org/Homo_sapiens/Gene/Summary?db=core;g={{ hgnc_info['ensembl_gene_id'] }}">{{ hgnc_info['ensembl_gene_id'] }}</a><br/>
       <b>Entrez:</b> <a href="https://www.ncbi.nlm.nih.gov/gene/{{ hgnc_info['entrez_id'] }}">{{ hgnc_info['entrez_id'] }}</a><br/>
       <b>HGNC:</b> <a href="https://www.genenames.org/data/gene-symbol-report/#!/hgnc_id/{{ hgnc_info['hgnc_id'] }}">{{ hgnc_info['hgnc_id'] }}</a><br/>
+      <b>HAGR:</b> <a href="https://genomics.senescence.info/genes/entry.php?hgnc={{ gene_hgnc }}">{{ gene_hgnc }}</a><br/>
       <b>UniProt:</b>
       {% set uniprot_id_count = hgnc_info['uniprot_ids']|length %}
       {% set i = 0 %}
