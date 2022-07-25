@@ -1,5 +1,7 @@
 # gene_variants
-Integrated toolkit for analysing gene variants and their potential effects.
+Integrated toolkit with web GUI for analysing gene variants and their potential effects.
+
+It uses [SnpEff](https://github.com/pcingola/SnpEff) for annotating the VCFs.
 
 ## Setup
 
