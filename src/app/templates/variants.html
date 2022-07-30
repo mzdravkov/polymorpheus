@@ -167,6 +167,17 @@ function focusBrowser(chrom, start, end) {
   document.getElementById("browser_div").scrollIntoView();
 }
 
+function mapGenomeRef(ref) {
+  switch (ref) {
+    case "GRCh38":
+      return 'hg38';
+    case "GRCh37":
+      return 'hg19';
+    default:
+      alert('Non-supported reference genome: "' + ref) + '". Supported references currently are GRCh38 and GRCh37.';
+  }
+}
+
 $(document).ready(function() {
   $('#variants_table').DataTable({
     paging: true,
@@ -197,7 +208,7 @@ $(document).ready(function() {
 
   var options =
   {
-    genome: "hg38", // TODO: handle other reference genomes
+    genome: mapGenomeRef("{{ file['genome_ref'] }}"),
     locus: "{{ chromosome|normalize_chromosome }}:{{ start_pos }}-{{ end_pos }}",
     showAllChromosomes: false,
     showChromosomeWidget: false,
