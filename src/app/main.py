@@ -93,8 +93,11 @@ def upload_vcf():
         filename = secure_filename(file.filename)
         path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(path)
+
         vcf_sha = utils.sha256sum(path)
-        existing_row = db.get_file_by_sha(vcf_sha)
+        gene_set_id = request.form['gene_set']
+
+        existing_row = db.get_file(vcf_sha, gene_set_id)
         if existing_row:
             flash(Markup('File has already been uploaded and processed. <a href="/files/{}">Link to existing file</a>'.format(vcf_sha)), category='info')
             return redirect(url_for('main.files'))
@@ -107,8 +110,6 @@ def upload_vcf():
             flash('Cannot process the VCF file: ' + str(e), category='danger')
             return redirect(url_for('main.files'))
 
-        gene_set_id = request.form['gene_set']
-
         db.save_file(filename, vcf_sha, path, reference_genome, gene_set_id, datetime.now())
 
         genes = db.get_genes_for_gene_set(gene_set_id)
@@ -120,10 +121,10 @@ def upload_vcf():
         return redirect(url_for('main.files'))
 
 
-@main.route('/files/<sha>')    
-def file_summary(sha):
+@main.route('/files/<sha>/<gene_set_id>')    
+def file_summary(sha, gene_set_id):
     selected_chromosomes = request.args.getlist('chromosomes')
-    file = db.get_file_by_sha(sha)
+    file = db.get_file(sha, gene_set_id)
     gene_set = db.get_gene_set_by_id(file['gene_set_id'])
     file_summary = analysis.file_summary(sha).to_dict('records')[0]
     impact_summary = analysis.impact_summary(sha).to_dict('records')
@@ -142,16 +143,17 @@ def file_summary(sha):
         selected_chromosomes=selected_chromosomes)
 
 
-@main.route('/files/<sha>/delete')
-def delete_file(sha):
-    db.delete_file(sha)
+@main.route('/files/<sha>/<gene_set_id>/delete')
+def delete_file(sha, gene_set_id):
+    db.delete_file(sha, gene_set_id)
     flash('The file and all its information was deleted.', category='success')
     return redirect(url_for('main.files'))
 
 
-@main.route('/files/<sha>/gene/<gene_hgnc>')
-def get_gene(sha, gene_hgnc):
-    file = db.get_file_by_sha(sha)
+@main.route('/files/<sha>/<gene_set_id>/gene/<gene_hgnc>')
+def get_gene(sha, gene_set_id, gene_hgnc):
+    file = db.get_file(sha, gene_set_id)
+    gene_set = db.get_gene_set_by_id(gene_set_id)
     chromosome = db.get_chromosome_for_gene(gene_hgnc)
     hgnc_info = get_hgnc_info(gene_hgnc)
     selected_biotypes = request.args.getlist('biotypes')
@@ -177,6 +179,7 @@ def get_gene(sha, gene_hgnc):
     return render_template(
         'gene.html',
         file=file,
+        gene_set=gene_set,
         gene_hgnc=gene_hgnc,
         hgnc_info=hgnc_info,
         chromosome=chromosome,
@@ -186,9 +189,10 @@ def get_gene(sha, gene_hgnc):
         protein_annotation=protein_annotation)
 
 
-@main.route('/files/<file_hash>/<gene_hgnc>/variants')
-def get_gene_variants(file_hash, gene_hgnc):
-    file = db.get_file_by_sha(file_hash)
+@main.route('/files/<file_hash>/<gene_set_id>/<gene_hgnc>/variants')
+def get_gene_variants(file_hash, gene_set_id, gene_hgnc):
+    file = db.get_file(file_hash, gene_set_id)
+    gene_set = db.get_gene_set_by_id(gene_set_id)
     hgnc_info = get_hgnc_info(gene_hgnc)
 
     selected_biotypes = request.args.getlist('biotypes')
@@ -198,6 +202,7 @@ def get_gene_variants(file_hash, gene_hgnc):
 
     variants_df = db.get_variants(
         file_hash,
+        gene_set_id,
         gene_hgnc,
         biotypes=selected_biotypes,
         effects=selected_effects,
@@ -224,6 +229,7 @@ def get_gene_variants(file_hash, gene_hgnc):
     return render_template(
         'variants.html',
         file=file,
+        gene_set=gene_set,
         hgnc_info=hgnc_info,
         gene_hgnc=gene_hgnc,
         variants=variants,
@@ -240,30 +246,37 @@ def get_gene_variants(file_hash, gene_hgnc):
         end_pos=end_pos)
 
 
-@main.route('/files/<file_hash>/<gene_hgnc>/variants/<variant_id>')
-def show_variant(file_hash, gene_hgnc, variant_id):
-    file = db.get_file_by_sha(file_hash)
-    variant = db.get_variant(file_hash, gene_hgnc, variant_id)
-    annotations = db.get_variant_annotations(file_hash, gene_hgnc, variant_id)
+@main.route('/files/<file_hash>/<gene_set_id>/<gene_hgnc>/variants/<variant_id>')
+def show_variant(file_hash, gene_set_id, gene_hgnc, variant_id):
+    file = db.get_file(file_hash, gene_set_id)
+    gene_set = db.get_gene_set_by_id(gene_set_id)
+    variant = db.get_variant(file_hash, gene_set_id, gene_hgnc, variant_id)
+    annotations = db.get_variant_annotations(file_hash, gene_set_id, gene_hgnc, variant_id)
 
     return render_template(
         'variant.html',
         file=file,
+        gene_set=gene_set,
         gene_hgnc=gene_hgnc,
         variant=variant,
         annotations=annotations)
 
 
-@main.route('/files/<file_hash>/<gene_hgnc>/variants/<variant_id>/effects/<annotation_id>')
-def show_effect(file_hash, gene_hgnc, variant_id, annotation_id):
-    file = db.get_file_by_sha(file_hash)
-    variant = db.get_variant(file_hash, gene_hgnc, variant_id)
-    annotation = db.get_variant_annotation(file_hash, gene_hgnc, variant_id, annotation_id)
+@main.route('/files/<file_hash>/<gene_set_id>/<gene_hgnc>/variants/<variant_id>/effects/<annotation_id>')
+def show_effect(file_hash, gene_set_id, gene_hgnc, variant_id, annotation_id):
+    file = db.get_file(file_hash, gene_set_id)
+    variant = db.get_variant(file_hash, gene_set_id, gene_hgnc, variant_id)
+    annotation = db.get_variant_annotation(file_hash, gene_set_id, gene_hgnc, variant_id, annotation_id)
     transcript_id = annotation['feature_id'][0:15]
     ref_protein = get_protein_seq_from_transcript_id(transcript_id)
     hgvs = annotation['hgvs_protein']
-    alt_protein = proteins.get_protein_variant(ref_protein, hgvs)
-    protein_change_range = proteins.get_range_from_hgvs(hgvs)
+
+    # If there's no HGVS, then there's no expected change in the protein sequence.
+    alt_protein = ref_protein
+    protein_change_range = (-1, -1)
+    if hgvs:
+        alt_protein = proteins.get_protein_variant(ref_protein, hgvs)
+        protein_change_range = proteins.get_range_from_hgvs(hgvs)
 
     return render_template(
         'effect.html',
@@ -276,9 +289,9 @@ def show_effect(file_hash, gene_hgnc, variant_id, annotation_id):
         protein_change_range=protein_change_range)
 
 
-@main.route('/files/<sha>/<gene_hgnc>/vcf')
-def get_gene_vcf(sha, gene_hgnc):
-    file = db.get_file_by_sha(sha)
+@main.route('/files/<sha>/<gene_set_id>/<gene_hgnc>/vcf')
+def get_gene_vcf(sha, gene_set_id, gene_hgnc):
+    file = db.get_file(sha, gene_set_id)
     directory = os.path.join(main.root_path, '..', '..', 'data', 'intermediary', file['name'])
 
     include_modifiers = request.args.get('include_modifiers', default=False, type=bool)
@@ -290,9 +303,9 @@ def get_gene_vcf(sha, gene_hgnc):
     return send_from_directory(directory, file_name, as_attachment=True, attachment_filename=file_name)
 
 
-@main.route('/files/<sha>/<gene_hgnc>/index')
-def get_gene_index(sha, gene_hgnc):
-    file = db.get_file_by_sha(sha)
+@main.route('/files/<sha>/<gene_set_id>/<gene_hgnc>/index')
+def get_gene_index(sha, gene_set_id, gene_hgnc):
+    file = db.get_file(sha, gene_set_id)
     directory = os.path.join(main.root_path, '..', '..', 'data', 'intermediary', file['name'])
 
     include_modifiers = request.args.get('include_modifiers', default=False, type=bool)

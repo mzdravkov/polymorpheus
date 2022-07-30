@@ -8,7 +8,7 @@ from vcf_processing import validate_vcf_version
 from vcf_processing import validate_and_get_genome_reference
 from vcf_processing import create_filtered_vcf_file
 
-from db import get_file_by_sha, save_file, save_gene_data, update_file_status
+from db import get_file, save_file, save_gene_data, update_file_status
 from utils import sha256sum, get_data_dir
 
 
@@ -23,7 +23,7 @@ def __get_snpeff_genome_reference(genome_reference):
 def parse(vcf_file, genes_file, gene_set_id):
     vcf_sha = sha256sum(vcf_file)
 
-    existing_row = get_file_by_sha(vcf_sha)
+    existing_row = get_file(vcf_sha, gene_set_id)
 
     if existing_row and existing_row['status'] == 'processed':
         data_dir = get_data_dir(vcf_file)
@@ -53,11 +53,11 @@ def parse(vcf_file, genes_file, gene_set_id):
             filtered_vcf = create_filtered_vcf_file(gene_vcf)
 
             variants, annotations = parse_vcf(gene_vcf)
-            save_gene_data(vcf_sha, gene, variants, annotations)
+            save_gene_data(vcf_sha, gene_set_id, gene, variants, annotations)
 
             # create a tabix index for the vcf and filtered vcf
             # and compress them with gzip
             pysam.tabix_index(gene_vcf, preset='vcf', force=True)
             pysam.tabix_index(filtered_vcf, preset='vcf', force=True)
-        update_file_status(vcf_sha, 'processed')
+        update_file_status(vcf_sha, gene_set_id, 'processed')
     print('Processed ' + vcf_file)

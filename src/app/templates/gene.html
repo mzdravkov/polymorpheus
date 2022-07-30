@@ -12,7 +12,7 @@
   <nav class="breadcrumb" aria-label="breadcrumbs">
     <ul>
       <li><a href="/">Files</a></li>
-      <li><a href="/files/{{ file['hash'] }}"><span class="max_40_ch">{{ file['name'] }}</span></a></li>
+      <li><a href="/files/{{ file['hash'] }}/{{ file['gene_set_id'] }}"><span class="max_40_ch">{{ file['name'] }}</span> ({{ gene_set['name'] }})</a></li>
       <li class="is-active"><a href="#" aria-current="page">{{ gene_hgnc }}</a></li>
     </ul>
   </nav>
@@ -38,7 +38,7 @@
       {% endfor %}
     </div>
     <div class="column">
-      <a class="button is-link is-pulled-right" href="/files/{{ file['hash'] }}/{{ gene_hgnc }}/variants">List variants</a>
+      <a class="button is-link is-pulled-right" href="/files/{{ file['hash'] }}/{{ file['gene_set_id'] }}/{{ gene_hgnc }}/variants">List variants</a>
     </div>
   </div>
 
@@ -106,10 +106,10 @@
             {{ row['order'] }}
           </td>
           <td>
-            <a href="/files/{{ file['hash'] }}/{{ gene_hgnc }}/variants?impacts={{ row['impact'] }}">{{ row['impact'] }}</a>
+            <a href="/files/{{ file['hash'] }}/{{ file['gene_set_id'] }}/{{ gene_hgnc }}/variants?impacts={{ row['impact'] }}">{{ row['impact'] }}</a>
           </td>
           <td>
-            <a href="/files/{{ file['hash'] }}/{{ gene_hgnc }}/variants?effects={{ row['effect'] }}">{{ row['effect'] }}</a>
+            <a href="/files/{{ file['hash'] }}/{{ file['gene_set_id'] }}/{{ gene_hgnc }}/variants?effects={{ row['effect'] }}">{{ row['effect'] }}</a>
           </td>
           <td>
             {{ row['count']|int }}

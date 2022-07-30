@@ -16,7 +16,6 @@ DATABASE = 'db.duckdb'
 
 with __lock.write:
 	db = duckdb.connect(database=DATABASE, read_only=False)
-	# TODO: files.gene_set_id should be part of the primary key
 	db.execute(
 	"""
 	CREATE SEQUENCE IF NOT EXISTS gene_sets_id_seq START 1;
@@ -37,15 +36,17 @@ with __lock.write:
 
 		FOREIGN KEY(gene_set_id) REFERENCES gene_sets(id)
 	);
+
 	CREATE TABLE IF NOT EXISTS files (
-		hash VARCHAR(40) PRIMARY KEY, 
+		hash VARCHAR(40) NOT NULL, 
+		gene_set_id UINTEGER NOT NULL,
 		name VARCHAR(1000) NOT NULL,
 		path VARCHAR(1000) NOT NULL,
 		genome_ref VARCHAR(64) NOT NULL,
 		created_at TIMESTAMP NOT NULL,
 		status VARCHAR(32) NOT NULL,
-		gene_set_id UINTEGER NOT NULL,
 
+		PRIMARY KEY (hash, gene_set_id),
 		FOREIGN KEY(gene_set_id) REFERENCES gene_sets(id)
 	);
 
@@ -53,20 +54,23 @@ with __lock.write:
 		id UINTEGER PRIMARY KEY,
 		created_at TIMESTAMP, 
 		file_hash VARCHAR(40) NOT NULL,
+		gene_set_id UINTEGER NOT NULL,
 
-		FOREIGN KEY(file_hash) REFERENCES files(hash)
+		FOREIGN KEY(file_hash, gene_set_id) REFERENCES files(hash, gene_set_id)
 	);
 
 	CREATE TABLE IF NOT EXISTS genes (
 		file_hash VARCHAR(40) NOT NULL,
+		gene_set_id UINTEGER NOT NULL,
 		gene_hgnc VARCHAR NOT NULL,
 
-		PRIMARY KEY (file_hash, gene_hgnc),
-		FOREIGN KEY(file_hash) REFERENCES files(hash)
+		PRIMARY KEY (file_hash, gene_set_id, gene_hgnc),
+		FOREIGN KEY(file_hash, gene_set_id) REFERENCES files(hash, gene_set_id)
 	);
 
 	CREATE TABLE IF NOT EXISTS variants (
 		file_hash VARCHAR(40) NOT NULL,
+		gene_set_id UINTEGER NOT NULL,
 		gene_hgnc VARCHAR NOT NULL,
 		gene_variation UINTEGER NOT NULL,
 
@@ -90,12 +94,13 @@ with __lock.write:
 		var_type VARCHAR,
 		var_subtype VARCHAR,
 
-		PRIMARY KEY (file_hash, gene_hgnc, gene_variation),
-		FOREIGN KEY(file_hash, gene_hgnc) REFERENCES genes(file_hash, gene_hgnc),
+		PRIMARY KEY (file_hash, gene_set_id, gene_hgnc, gene_variation),
+		FOREIGN KEY(file_hash, gene_set_id, gene_hgnc) REFERENCES genes(file_hash, gene_set_id, gene_hgnc),
 	);
 
 	CREATE TABLE IF NOT EXISTS annotations (
 		file_hash VARCHAR(40) NOT NULL,
+		gene_set_id UINTEGER NOT NULL,
 		gene_hgnc VARCHAR NOT NULL,
 		gene_variation UINTEGER NOT NULL,
 		variation_annotation UINTEGER NOT NULL,
@@ -118,8 +123,8 @@ with __lock.write:
 		distance_to_feature VARCHAR,
 		note VARCHAR,
 
-		PRIMARY KEY (file_hash, gene_hgnc, gene_variation, variation_annotation),
-		FOREIGN KEY(file_hash, gene_hgnc, gene_variation) REFERENCES variants(file_hash, gene_hgnc, gene_variation),
+		PRIMARY KEY (file_hash, gene_set_id, gene_hgnc, gene_variation, variation_annotation),
+		FOREIGN KEY(file_hash, gene_set_id, gene_hgnc, gene_variation) REFERENCES variants(file_hash, gene_set_id, gene_hgnc, gene_variation),
 	);
 	"""
 	)
@@ -130,6 +135,7 @@ INSERT_VARIANTS_QUERY = """
 INSERT INTO variants
 SELECT
 	'{}' AS file_hash,
+	'{}' AS gene_set_id,
 	'{}' AS gene_hgnc,
 	gene_variation,
 	chrom,
@@ -154,8 +160,9 @@ FROM {}
 INSERT_ANNOTATIONS_QUERY = """
 INSERT INTO annotations
 SELECT
-	'{}' as file_hash,
-	'{}' as gene_hgnc,
+	'{}' AS file_hash,
+	'{}' AS gene_set_id,
+	'{}' AS gene_hgnc,
 	gene_variation,
 	variation_annotation,
 	alt,
@@ -178,10 +185,10 @@ FROM {}
 """
 
 
-def save_gene_data(file_hash, gene, variants, annotations):
+def save_gene_data(file_hash, gene_set_id, gene, variants, annotations):
 	with __lock.write:
 		db = duckdb.connect(database=DATABASE, read_only=False)
-		db.execute('INSERT INTO genes (file_hash, gene_hgnc) VALUES (?, ?)', (file_hash, gene))
+		db.execute('INSERT INTO genes (file_hash, gene_set_id, gene_hgnc) VALUES (?, ?, ?)', (file_hash, gene_set_id, gene))
 
 		# add index inplace as a new column and rename it gene_variation
 		variants.reset_index(inplace=True)
@@ -197,10 +204,10 @@ def save_gene_data(file_hash, gene, variants, annotations):
 		db.register('variants_df', variants)
 		db.register('annotations_df', annotations)
 
-		insert_variants_query = INSERT_VARIANTS_QUERY.format(file_hash, gene, 'variants_df')
+		insert_variants_query = INSERT_VARIANTS_QUERY.format(file_hash, gene_set_id, gene, 'variants_df')
 		db.execute(insert_variants_query)
 
-		insert_annotations_query = INSERT_ANNOTATIONS_QUERY.format(file_hash, gene, 'annotations_df')
+		insert_annotations_query = INSERT_ANNOTATIONS_QUERY.format(file_hash, gene_set_id, gene, 'annotations_df')
 		db.execute(insert_annotations_query)
 
 		# When we register the dataframes, duckdb would keep references to them.
@@ -210,10 +217,11 @@ def save_gene_data(file_hash, gene, variants, annotations):
 		db.close()
 
 
-def get_file_by_sha(sha):
+def get_file(sha, gene_set_id):
 	with __lock.read:
 		db = duckdb.connect(database=DATABASE, read_only=True)
-		files = db.execute('SELECT * FROM files WHERE hash = ?', (sha,)).fetch_df().to_dict('records')
+		query = 'SELECT * FROM files WHERE hash = ? AND gene_set_id = ?'
+		files = db.execute(query, (sha, gene_set_id)).fetch_df().to_dict('records')
 		file = files[0] if files else None
 		db.close()
 		return file
@@ -228,17 +236,30 @@ def save_file(filename, sha, path, genome_ref, gene_set_id, created_at, status='
 		db.close()
 
 
-def update_file_status(sha, status):
+def update_file_status(sha, gene_set_id, status):
 	with __lock.write:
 		db = duckdb.connect(database=DATABASE, read_only=False)
-		db.execute('UPDATE files SET status=? WHERE hash = ?', (status, sha))
+		db.execute('UPDATE files SET status=? WHERE hash = ? AND gene_set_id = ?', (status, sha, gene_set_id))
 		db.close()
 
 
 def get_files():
 	with __lock.read:
 		db = duckdb.connect(database=DATABASE, read_only=True)
-		files =  db.execute('SELECT * FROM files').fetch_df().to_dict('records')
+		query = """
+		SELECT f.hash,
+			   f.name,
+			   f.path,
+			   f.genome_ref,
+			   f.created_at,
+			   f.status,
+			   f.gene_set_id,
+			   g.name AS gene_set_name,
+			   g.description AS gene_set_description
+		FROM files f
+		JOIN gene_sets g ON g.id = f.gene_set_id
+		"""
+		files =  db.execute(query).fetch_df().to_dict('records')
 		db.close()
 		return files
 
@@ -256,7 +277,7 @@ def __in_filter(column, values):
 	return '  AND {} IN ({})'.format(column, ','.join(['?']*len(values)))
 
 
-def get_variants(sha, gene_hgnc, effects=None, impacts=None, biotypes=None, feature_types=None):
+def get_variants(sha, gene_set_id, gene_hgnc, effects=None, impacts=None, biotypes=None, feature_types=None):
 	with __lock.read:
 		db = duckdb.connect(database=DATABASE, read_only=True)
 		variants_df = None
@@ -265,6 +286,7 @@ def get_variants(sha, gene_hgnc, effects=None, impacts=None, biotypes=None, feat
 		FROM variants v
 		JOIN annotations a ON v.file_hash = a.file_hash AND v.gene_hgnc = a.gene_hgnc AND v.gene_variation = a.gene_variation
 		WHERE v.file_hash = ?
+		    AND v.gene_set_id = ?
 			AND v.gene_hgnc = ?
         """
 
@@ -277,7 +299,7 @@ def get_variants(sha, gene_hgnc, effects=None, impacts=None, biotypes=None, feat
 		if feature_types:
 			query += __in_filter('feature_type', feature_types)
 
-		params = [sha, gene_hgnc] + [v for p in [effects, impacts, biotypes, feature_types] for v in p if p]
+		params = [sha, gene_set_id, gene_hgnc] + [v for p in [effects, impacts, biotypes, feature_types] for v in p if p]
 
 		variants_df =  db.execute(query, params).fetch_df()
 		# convert 0-based index to 1-based and half-open interval, i.e [) to closed, i.e. []
@@ -286,14 +308,14 @@ def get_variants(sha, gene_hgnc, effects=None, impacts=None, biotypes=None, feat
 		return variants_df
 
 
-def delete_file(sha):
+def delete_file(sha, gene_set_id):
 	with __lock.write:
 		db = duckdb.connect(database=DATABASE, read_only=False)
-		db.execute('DELETE FROM annotations WHERE file_hash = ?', (sha,))
-		db.execute('DELETE FROM variants WHERE file_hash = ?', (sha,))
-		db.execute('DELETE FROM genes WHERE file_hash = ?', (sha,))
-		db.execute('DELETE FROM tasks WHERE file_hash = ?', (sha,))
-		db.execute('DELETE FROM files WHERE hash = ?', (sha,))
+		db.execute('DELETE FROM annotations WHERE file_hash = ? AND gene_set_id = ?', (sha, gene_set_id))
+		db.execute('DELETE FROM variants WHERE file_hash = ? AND gene_set_id = ?', (sha, gene_set_id))
+		db.execute('DELETE FROM genes WHERE file_hash = ? AND gene_set_id = ?', (sha, gene_set_id))
+		db.execute('DELETE FROM tasks WHERE file_hash = ? AND gene_set_id = ?', (sha, gene_set_id))
+		db.execute('DELETE FROM files WHERE hash = ? AND gene_set_id = ?', (sha, gene_set_id))
 		db.close()
 
 
@@ -367,18 +389,19 @@ def delete_gene_set_member(id):
 		db.close()
 
 
-def get_variant(file_hash, gene_hgnc, variant_id):
+def get_variant(file_hash, gene_set_id, gene_hgnc, variant_id):
 	with __lock.read:
 		db = duckdb.connect(database=DATABASE, read_only=True)
 		query = """
 		SELECT *
 		FROM variants
 		WHERE file_hash = ?
+		  AND gene_set_id = ?
 		  AND gene_hgnc = ?
 		  AND gene_variation = ?
 		LIMIT 1
 		"""
-		variants = db.execute(query, (file_hash, gene_hgnc, variant_id)).fetch_df().to_dict('records')
+		variants = db.execute(query, (file_hash, gene_set_id, gene_hgnc, variant_id)).fetch_df().to_dict('records')
 		variant = None
 		if variants:
 			variant = variants[0]
@@ -388,51 +411,54 @@ def get_variant(file_hash, gene_hgnc, variant_id):
 		return variant
 
 
-def get_variant_annotations(file_hash, gene_hgnc, variant_id):
+def get_variant_annotations(file_hash, gene_set_id, gene_hgnc, variant_id):
 	with __lock.read:
 		db = duckdb.connect(database=DATABASE, read_only=True)
 		query = """
 		SELECT *
 		FROM annotations
 		WHERE file_hash = ?
+		  AND gene_set_id = ?
 		  AND gene_hgnc = ?
 		  AND gene_variation = ?
 		"""
-		annotations = db.execute(query, (file_hash, gene_hgnc, variant_id)).fetch_df().to_dict('records')
+		annotations = db.execute(query, (file_hash, gene_set_id, gene_hgnc, variant_id)).fetch_df().to_dict('records')
 		db.close()
 		return annotations
 
 
-def get_variant_annotation(file_hash, gene_hgnc, variant_id, annotation_id):
+def get_variant_annotation(file_hash, gene_set_id, gene_hgnc, variant_id, annotation_id):
 	with __lock.read:
 		db = duckdb.connect(database=DATABASE, read_only=True)
 		query = """
 		SELECT *
 		FROM annotations
 		WHERE file_hash = ?
+		  AND gene_set_id = ?
 		  AND gene_hgnc = ?
 		  AND gene_variation = ?
 		  AND variation_annotation = ?
 		LIMIT 1
 		"""
-		annotations = db.execute(query, (file_hash, gene_hgnc, variant_id, annotation_id)).fetch_df().to_dict('records')
+		annotations = db.execute(query, (file_hash, gene_set_id, gene_hgnc, variant_id, annotation_id)).fetch_df().to_dict('records')
 		annotation = annotations[0] if annotations else None
 		db.close()
 		return annotation
 
 
-def get_transcripts_for_variant(file_hash, gene_hgnc, variation_id):
+def get_transcripts_for_variant(file_hash, gene_set_id, gene_hgnc, variation_id):
 	with __lock.read:
 		db = duckdb.connect(database=DATABASE, read_only=True)
 		query = """
 		SELECT feature_id
 		FROM annotations
 		WHERE file_hash = ?
+		  AND gene_set_id = ?
 		  AND gene_hgnc = ?
 		  AND gene_variation = ?
 		  AND feature_type = 'transcript'
 		"""
-		genes = db.execute(query, (id,)).fetch_df().to_dict('records')
+		genes = db.execute(query, (file_hash, gene_hgnc, gene_hgnc, variation_id)).fetch_df().to_dict('records')
 		db.close()
 		return genes
 

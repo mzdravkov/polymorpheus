@@ -12,8 +12,8 @@
   <nav class="breadcrumb" aria-label="breadcrumbs">
     <ul>
       <li><a href="/">Files</a></li>
-      <li><a href="/files/{{ file['hash'] }}"><span class="max_40_ch">{{ file['name'] }}</span></a></li>
-      <li><a href="/files/{{ file['hash'] }}/gene/{{ gene_hgnc }}">{{ gene_hgnc }}</a></li>
+      <li><a href="/files/{{ file['hash'] }}/{{ file['gene_set_id'] }}"><span class="max_40_ch">{{ file['name'] }}</span></a></li>
+      <li><a href="/files/{{ file['hash'] }}/{{ file['gene_set_id'] }}/gene/{{ gene_hgnc }}">{{ gene_hgnc }}</a></li>
       <li class="is-active"><a href="#" aria-current="page">Variants</a></li>
     </ul>
   </nav>
@@ -146,7 +146,7 @@
           </td>
           <td>
             <button class="button is-small is-info is-light" onclick="focusBrowser('{{chromosome}}', {{ row['start_pos'] }}, {{ row['end_pos'] }})">Focus in browser</button>
-            <a href="/files/{{ file['hash'] }}/{{ gene_hgnc }}/variants/{{ row['gene_variation'] }}" class="button is-small is-info is-light">Details</button>
+            <a href="/files/{{ file['hash'] }}/{{ file['gene_set_id'] }}/{{ gene_hgnc }}/variants/{{ row['gene_variation'] }}" class="button is-small is-info is-light">Details</button>
           </td>
         </tr>
       {% endfor %}
@@ -197,8 +197,8 @@ $(document).ready(function() {
     includeModifiers = !includeModifiers;
     let trackConfig = igvBrowser.findTracks('name', 'Variants')[0].config;
     igvBrowser.removeTrackByName('Variants');
-    trackConfig.url = "{{ url_for('main.get_gene_vcf', sha=file['hash'], gene_hgnc=gene_hgnc, _external=True) }}";
-    trackConfig.indexURL = "{{ url_for('main.get_gene_index', sha=file['hash'], gene_hgnc=gene_hgnc, _external=True) }}";
+    trackConfig.url = "{{ url_for('main.get_gene_vcf', sha=file['hash'], gene_set_id=gene_set['id'], gene_hgnc=gene_hgnc, _external=True) }}";
+    trackConfig.indexURL = "{{ url_for('main.get_gene_index', sha=file['hash'], gene_set_id=gene_set['id'], gene_hgnc=gene_hgnc, _external=True) }}";
     if (includeModifiers) {
       trackConfig.url += "?include_modifiers=true";
       trackConfig.indexURL += "?include_modifiers=true";
@@ -215,8 +215,8 @@ $(document).ready(function() {
     tracks: [
       {
         name: "Variants",
-        url: "{{ url_for('main.get_gene_vcf', sha=file['hash'], gene_hgnc=gene_hgnc, _external=True) }}",
-        indexURL: "{{ url_for('main.get_gene_index', sha=file['hash'], gene_hgnc=gene_hgnc, _external=True) }}",
+        url: "{{ url_for('main.get_gene_vcf', sha=file['hash'], gene_set_id=gene_set['id'], gene_hgnc=gene_hgnc, _external=True) }}",
+        indexURL: "{{ url_for('main.get_gene_index', sha=file['hash'], gene_set_id=gene_set['id'], gene_hgnc=gene_hgnc, _external=True) }}",
         format: "vcf",
         displayMode: "EXPANDED",
         color: function (variant) {

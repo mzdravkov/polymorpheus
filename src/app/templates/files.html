@@ -14,6 +14,9 @@
         Name
       </th>
       <th>
+        Gene set
+      </th>
+      <th>
         Created at
       </th>
       <th>
@@ -27,7 +30,10 @@
       {% for file in files %}
         <tr>
           <td>
-            <a class="has-text-link" href="/files/{{ file['hash'] }}">{{ file['name'] }}</a>
+            <a class="has-text-link" href="/files/{{ file['hash'] }}/{{ file['gene_set_id'] }}">{{ file['name'] }}</a>
+          </td>
+          <td>
+            {{ file['gene_set_name'] }}
           </td>
           <td>
             {{ file['created_at']|format_datetime }}
@@ -36,7 +42,7 @@
             {{ file['status'] }}
           </td>
           <td>
-            <a class="has-text-link ml-5" href="/files/{{ file['hash'] }}/delete" onclick="return confirm('Are you sure you want to delete this file and all data associated with it?')">Delete</a>
+            <a class="has-text-link ml-5" href="/files/{{ file['hash'] }}/{{ file['gene_set_id'] }}/delete" onclick="return confirm('Are you sure you want to delete this file and all data associated with it?')">Delete</a>
           </td>
         </tr>
       {% endfor %}

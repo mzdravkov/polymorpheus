@@ -12,9 +12,9 @@
   <nav class="breadcrumb" aria-label="breadcrumbs">
     <ul>
       <li><a href="/">Files</a></li>
-      <li><a href="/files/{{ file['hash'] }}"><span class="max_40_ch">{{ file['name'] }}</span></a></li>
-      <li><a href="/files/{{ file['hash'] }}/{{ gene_hgnc }}">{{ gene_hgnc }}</a></li>
-      <li><a href="/files/{{ file['hash'] }}/{{ gene_hgnc }}/variants">Variants</a></li>
+      <li><a href="/files/{{ file['hash'] }}/{{ file['gene_set_id'] }}"><span class="max_40_ch">{{ file['name'] }}</span> ({{ gene_set['name'] }})</a></li>
+      <li><a href="/files/{{ file['hash'] }}/{{ file['gene_set_id'] }}/{{ gene_hgnc }}">{{ gene_hgnc }}</a></li>
+      <li><a href="/files/{{ file['hash'] }}/{{ file['gene_set_id'] }}/{{ gene_hgnc }}/variants">Variants</a></li>
       <li class="is-active"><a href="#" aria-current="page">{{ variant['chrom'] }}:{{ variant['start_pos'] }}-{{ variant['end_pos'] }}</a></li>
     </ul>
   </nav>
@@ -54,7 +54,7 @@
             {{ annotation['feature_type'] }}
           </td>
           <td>
-            <a href="/files/{{ file['hash'] }}/{{ gene_hgnc }}/variants/{{ variant['gene_variation'] }}/effects/{{ annotation['variation_annotation'] }}">{{ annotation['feature_id'] }}</a>
+            <a href="/files/{{ file['hash'] }}/{{ file['gene_set_id'] }}/{{ gene_hgnc }}/variants/{{ variant['gene_variation'] }}/effects/{{ annotation['variation_annotation'] }}">{{ annotation['feature_id'] }}</a>
             <!-- <a href="https://ensembl.org/Homo_sapiens/Transcript/Summary?t={{ annotation['feature_id'] }}">Ensembl</a> -->
           </td>
           <td>
