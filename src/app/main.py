@@ -265,6 +265,7 @@ def show_variant(file_hash, gene_set_id, gene_hgnc, variant_id):
 @main.route('/files/<file_hash>/<gene_set_id>/<gene_hgnc>/variants/<variant_id>/effects/<annotation_id>')
 def show_effect(file_hash, gene_set_id, gene_hgnc, variant_id, annotation_id):
     file = db.get_file(file_hash, gene_set_id)
+    gene_set = db.get_gene_set_by_id(gene_set_id)
     variant = db.get_variant(file_hash, gene_set_id, gene_hgnc, variant_id)
     annotation = db.get_variant_annotation(file_hash, gene_set_id, gene_hgnc, variant_id, annotation_id)
     transcript_id = annotation['feature_id'][0:15]
@@ -281,6 +282,7 @@ def show_effect(file_hash, gene_set_id, gene_hgnc, variant_id, annotation_id):
     return render_template(
         'effect.html',
         file=file,
+        gene_set=gene_set,
         gene_hgnc=gene_hgnc,
         variant=variant,
         annotation=annotation,
